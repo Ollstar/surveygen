@@ -81,7 +81,7 @@ const Chat: React.FC = () => {
   };
 
   return (
-    <div className="container mx-auto max-w-2xl border rounded bg-gradient-to-r from-gray-500 to-red-500">
+    <div className="container mx-auto max-w-2xl border rounded">
 
       <div className="relative w-full p-6 overflow-y-auto h-[40rem]">
         <ul className="space-y-2">
