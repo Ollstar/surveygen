@@ -120,7 +120,7 @@ const Chat: React.FC = () => {
 
   return (
     <div className="container mx-auto max-w-2xl border rounded h-screen flex flex-col overflow-hidden">
-      <div className="relative w-full p-6 overflow-hidden flex-grow flex flex-col">
+      <div className="absolute w-full p-6 overflow-hidden flex-grow flex flex-col">
         <ul className="space-y-2 flex-grow flex flex-col overflow-auto">
           {messages.map((message) => (
             <li
@@ -138,7 +138,7 @@ const Chat: React.FC = () => {
       </div>
       <form
         onSubmit={onSubmit}
-        className="fixed bottom-0 right-0 left-0 flex items-center p-3 border-t border-gray-300"
+        className="mt-auto bottom-0 flex items-center p-3 border-t border-gray-300"
       >
         <input
           type="text"
