@@ -138,7 +138,7 @@ const Chat: React.FC = () => {
       </div>
       <form
         onSubmit={onSubmit}
-        className="relative flex items-center p-3 border-t border-gray-300"
+        className="mt-auto mb-auto flex items-center p-3 border-t border-gray-300"
       >
         <input
           type="text"
