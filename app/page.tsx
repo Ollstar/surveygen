@@ -22,7 +22,6 @@ const Chat: React.FC = () => {
     },
   ]);
   const [inflight, setInflight] = useState<boolean>(false);
-  const [isFirstStream, setIsFirstStream] = useState<boolean>(true);
   const botMessageRef = useRef<{ id: string; content: string } | null>(null);
   const onSubmit = useCallback(
     async (e: FormEvent) => {
@@ -48,7 +47,7 @@ const Chat: React.FC = () => {
             headers: { "Content-Type": "application/json" },
             onmessage(ev) {
               const newChunk = ev.data;
-              if (newChunk === "event: firstStreamEnded") {
+              if (newChunk === "event: firstStreamEnded") { // We need to make a bunch of different events for each chain in the sequence
                 // Reset bot message reference
                 botMessageRef.current = null;
                 isFirstChunk = true;
@@ -67,7 +66,6 @@ const Chat: React.FC = () => {
                   setMessages((prevMessages) => [...prevMessages, botMessage]);
                   isFirstChunk = false;
                 } else {
-                  // Append new chunk to the current bot message
                   // Append new chunk to the current bot message
                   if (botMessageRef.current) {
                     botMessageRef.current.content += newChunk;
@@ -120,7 +118,7 @@ const Chat: React.FC = () => {
   };
 
   return (
-    <div className="container mx-auto max-w-2xl border rounded min-h-screen flex flex-col">
+    <div className="container mx-auto max-w-2xl border rounded h-screen flex flex-col">
       <div className="relative w-full p-6 overflow-hidden flex-grow h-full">
         <ul className="space-y-2 h-full w-full flex flex-col overflow-auto">
           {messages.map((message) => (
