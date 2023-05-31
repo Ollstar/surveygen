@@ -119,42 +119,43 @@ const Chat: React.FC = () => {
   };
 
   return (
-    <div className="container mx-auto max-w-2xl border rounded h-screen flex flex-col overflow-hidden">
-      <div className="absolute w-full p-6 overflow-hidden flex-grow flex flex-col">
-        <ul className="space-y-2 flex-grow flex flex-col overflow-auto">
-          {messages.map((message) => (
-            <li
-              key={message.id}
-              className={`flex ${
-                message.sender === "user" ? "justify-end" : "justify-start"
-              }`}
-            >
-              <div className="relative max-w-xl px-4 py-2 text-gray-600 bg-white rounded-md shadow-md">
-                {message.content}
-              </div>
-            </li>
-          ))}
-        </ul>
-      </div>
-      <form
-        onSubmit={onSubmit}
-        className="mt-auto bottom-0 flex items-center p-3 border-t border-gray-300"
-      >
-        <input
-          type="text"
-          value={input}
-          onChange={handleInputChange}
-          className="w-full h-10 px-3 py-2 text-gray-700 placeholder-gray-300 border rounded-md focus:outline-none"
-          placeholder="Type a message"
-        />
-        <button
-          type="submit"
-          className="ml-2 px-4 py-2 text-white bg-blue-500 rounded-full shadow-md hover:bg-blue-600 focus:outline-none"
+    <div className="container mx-auto max-w-2xl border rounded h-screen flex flex-col justify-between">
+  <div className="w-full p-6 overflow-auto">
+    <ul className="space-y-2">
+      {messages.map((message) => (
+        <li
+          key={message.id}
+          className={`flex ${
+            message.sender === "user" ? "justify-end" : "justify-start"
+          }`}
         >
-          Send
-        </button>
-      </form>
-    </div>
+          <div className="relative max-w-xl px-4 py-2 text-gray-600 bg-white rounded-md shadow-md">
+            {message.content}
+          </div>
+        </li>
+      ))}
+    </ul>
+  </div>
+  <form
+    onSubmit={onSubmit}
+    className="w-full flex-none flex p-3 border-t border-gray-300"
+  >
+    <input
+      type="text"
+      value={input}
+      onChange={handleInputChange}
+      className="w-full h-10 px-3 py-2 text-gray-700 placeholder-gray-300 border rounded-md focus:outline-none"
+      placeholder="Type a message"
+    />
+    <button
+      type="submit"
+      className="ml-2 px-4 py-2 text-white bg-blue-500 rounded-full shadow-md hover:bg-blue-600 focus:outline-none"
+    >
+      Send
+    </button>
+  </form>
+</div>
+
   );
 };
 
