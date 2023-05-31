@@ -1,6 +1,6 @@
 "use client";
 import { fetchEventSource } from "@microsoft/fetch-event-source";
-import { FormEvent, useCallback, useState, ChangeEvent, useRef } from "react";
+import { FormEvent, useCallback, useState, ChangeEvent, useRef, useEffect } from "react";
 
 export const runtime = "edge";
 
@@ -11,6 +11,18 @@ interface Message {
 }
 
 const Chat: React.FC = () => {
+  useEffect(() => {
+    const updateHeight = () => {
+      document.documentElement.style.setProperty('--app-height', `${window.innerHeight}px`);
+    };
+
+    window.addEventListener('resize', updateHeight);
+    updateHeight();
+
+    // Cleanup on component unmount
+    return () => window.removeEventListener('resize', updateHeight);
+  }, []); // Empty dependency array ensures this runs once on mount and cleanup on unmount
+
   const [stream, setStream] = useState<boolean>(true);
 
   const [input, setInput] = useState<string>("");

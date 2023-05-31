@@ -25,3 +25,19 @@ body {
     )
     rgb(var(--background-start-rgb));
 }
+
+@supports (-webkit-touch-callout: none) {
+  .h-screen {
+    height: -webkit-fill-available;
+  }
+}
+
+@media not all and (hover:hover) {
+  :root {
+    --app-height: 100%;
+  }
+
+  body {
+    height: var(--app-height);
+  }
+}
