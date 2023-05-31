@@ -96,8 +96,8 @@ const Chat: React.FC = () => {
 
   return (
     <div className="container mx-auto max-w-2xl border rounded min-h-screen flex flex-col">
-      <div className="relative w-full p-6 overflow-y-auto flex-grow">
-        <ul className="space-y-2">
+      <div className="relative w-full p-6 overflow-hidden flex-grow">
+        <ul className="space-y-2" style={{ maxHeight: 'calc(100vh - 112px)', overflowY: 'scroll' }}>
           {messages.map((message) => (
             <li
               key={message.id}
