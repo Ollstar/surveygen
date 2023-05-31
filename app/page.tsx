@@ -1,6 +1,6 @@
 "use client";
 import { fetchEventSource } from "@microsoft/fetch-event-source";
-import { FormEvent, useCallback, useState, ChangeEvent } from "react";
+import { FormEvent, useCallback, useState, ChangeEvent, useRef } from "react";
 
 export const runtime = "edge";
 
@@ -14,9 +14,16 @@ const Chat: React.FC = () => {
   const [stream, setStream] = useState<boolean>(true);
 
   const [input, setInput] = useState<string>("");
-  const [messages, setMessages] = useState<Message[]>([]);
+  const [messages, setMessages] = useState<Message[]>([
+    {
+      id: Date.now().toString(),
+      sender: "bot",
+      content: "Enter a movie title",
+    },
+  ]);
   const [inflight, setInflight] = useState<boolean>(false);
-
+  const [isFirstStream, setIsFirstStream] = useState<boolean>(true);
+  const botMessageRef = useRef<{ id: string; content: string } | null>(null);
   const onSubmit = useCallback(
     async (e: FormEvent) => {
       e.preventDefault();
@@ -34,7 +41,6 @@ const Chat: React.FC = () => {
 
       try {
         if (stream) {
-          let botMessage = "";
           let isFirstChunk = true;
           await fetchEventSource(`/api/generate`, {
             method: "POST",
@@ -42,27 +48,46 @@ const Chat: React.FC = () => {
             headers: { "Content-Type": "application/json" },
             onmessage(ev) {
               const newChunk = ev.data;
-              if (isFirstChunk) {
-                const botMessage: Message = {
-                  id: Date.now().toString(),
-                  sender: "bot",
-                  content: newChunk,
-                };
-                setMessages((prevMessages) => [...prevMessages, botMessage]);
-                isFirstChunk = false;
+              if (newChunk === "event: firstStreamEnded") {
+                // Reset bot message reference
+                botMessageRef.current = null;
+                isFirstChunk = true;
               } else {
-                botMessage += newChunk;
-                setMessages((prevMessages) => {
-                  const updatedMessages = prevMessages.map((message) => {
-                    if (
-                      message.id === prevMessages[prevMessages.length - 1].id
-                    ) {
-                      return { ...message, content: botMessage };
-                    }
-                    return message;
-                  });
-                  return updatedMessages;
-                });
+                if (isFirstChunk) {
+                  // Create new bot message, store it in the ref, and add it to the state
+                  const botMessage: Message = {
+                    id: Date.now().toString(),
+                    sender: "bot",
+                    content: newChunk,
+                  };
+                  botMessageRef.current = {
+                    id: botMessage.id,
+                    content: newChunk,
+                  };
+                  setMessages((prevMessages) => [...prevMessages, botMessage]);
+                  isFirstChunk = false;
+                } else {
+                  // Append new chunk to the current bot message
+                  // Append new chunk to the current bot message
+                  if (botMessageRef.current) {
+                    botMessageRef.current.content += newChunk;
+                    setMessages((prevMessages) => {
+                      const updatedMessages = prevMessages.map((message) => {
+                        if (
+                          botMessageRef.current &&
+                          message.id === botMessageRef.current.id
+                        ) {
+                          return {
+                            ...message,
+                            content: botMessageRef.current.content,
+                          };
+                        }
+                        return message;
+                      });
+                      return updatedMessages;
+                    });
+                  }
+                }
               }
             },
           });
@@ -96,8 +121,8 @@ const Chat: React.FC = () => {
 
   return (
     <div className="container mx-auto max-w-2xl border rounded min-h-screen flex flex-col">
-      <div className="relative w-full p-6 overflow-hidden flex-grow">
-        <ul className="space-y-2" style={{ maxHeight: 'calc(100vh - 112px)', overflowY: 'scroll' }}>
+      <div className="relative w-full p-6 overflow-hidden flex-grow h-full">
+        <ul className="space-y-2 h-full w-full flex flex-col overflow-auto">
           {messages.map((message) => (
             <li
               key={message.id}
