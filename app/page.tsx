@@ -30,7 +30,7 @@ const Chat: React.FC = () => {
     {
       id: Date.now().toString(),
       sender: "bot",
-      content: "Enter a movie title",
+      content: "Describe your business.",
     },
   ]);
   const [inflight, setInflight] = useState<boolean>(false);
@@ -59,8 +59,7 @@ const Chat: React.FC = () => {
             headers: { "Content-Type": "application/json" },
             onmessage(ev) {
               const newChunk = ev.data;
-              if (newChunk === "event: firstStreamEnded") {
-                // We need to make a bunch of different events for each chain in the sequence
+              if (newChunk.startsWith("stream") && newChunk.endsWith("Ended")) {
                 // Reset bot message reference
                 botMessageRef.current = null;
                 isFirstChunk = true;
@@ -101,6 +100,7 @@ const Chat: React.FC = () => {
                 }
               }
             },
+            
           });
           setInput("");
         } else {
