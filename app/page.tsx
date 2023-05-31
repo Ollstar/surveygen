@@ -47,7 +47,8 @@ const Chat: React.FC = () => {
             headers: { "Content-Type": "application/json" },
             onmessage(ev) {
               const newChunk = ev.data;
-              if (newChunk === "event: firstStreamEnded") { // We need to make a bunch of different events for each chain in the sequence
+              if (newChunk === "event: firstStreamEnded") {
+                // We need to make a bunch of different events for each chain in the sequence
                 // Reset bot message reference
                 botMessageRef.current = null;
                 isFirstChunk = true;
@@ -118,9 +119,9 @@ const Chat: React.FC = () => {
   };
 
   return (
-    <div className="container mx-auto max-w-2xl border rounded h-screen flex flex-col">
-      <div className="relative w-full p-6 overflow-hidden flex-grow h-full">
-        <ul className="space-y-2 h-full w-full flex flex-col overflow-auto">
+    <div className="container mx-auto max-w-2xl border rounded h-screen flex flex-col overflow-hidden">
+      <div className="relative w-full p-6 overflow-hidden flex-grow flex flex-col">
+        <ul className="space-y-2 flex-grow flex flex-col overflow-auto">
           {messages.map((message) => (
             <li
               key={message.id}
