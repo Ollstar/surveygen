@@ -26,31 +26,51 @@ export async function POST(req: Request) {
     const streaming = req.headers.get('accept') === 'text/event-stream';
 
     if (streaming) {
-      // For a streaming response we need to use a TransformStream to
-      // convert the LLM's callback-based API into a stream-based API.
       const encoder = new TextEncoder();
       const stream = new TransformStream();
       const writer = stream.writable.getWriter();
-      
-      const callbackManager = CallbackManager.fromHandlers({
+  
+      let endCounter = 0;
+  
+      const callbackManager1 = CallbackManager.fromHandlers({
         handleLLMNewToken: async (token: string) => {
           await writer.ready;
           await writer.write(encoder.encode(`data: ${token}\n\n`));
         },
         handleLLMEnd: async () => {
-          await writer.ready;
-          await writer.close();
+          endCounter++;
+          if (endCounter === 2) {
+            await writer.ready;
+            await writer.close();
+          }
         },
         handleLLMError: async (e: Error) => {
           await writer.ready;
           await writer.abort(e);
         },
       });
-
-      // Create the LangChain instances for playwright and critic
-      const playwrightLLM = new ChatOpenAI({ streaming, callbackManager });
-      const criticLLM = new ChatOpenAI({ streaming, callbackManager });
-
+  
+      const callbackManager2 = CallbackManager.fromHandlers({
+        handleLLMNewToken: async (token: string) => {
+          await writer.ready;
+          await writer.write(encoder.encode(`data: ${token}\n\n`));
+        },
+        handleLLMEnd: async () => {
+          endCounter++;
+          if (endCounter === 2) {
+            await writer.ready;
+            await writer.close();
+          }
+        },
+        handleLLMError: async (e: Error) => {
+          await writer.ready;
+          await writer.abort(e);
+        },
+      });
+  
+      const playwrightLLM = new ChatOpenAI({ streaming, callbackManager: callbackManager1 });
+      const criticLLM = new ChatOpenAI({ streaming, callbackManager: callbackManager2 });
+  
       // Create the LangChain instances for playwright and critic
       const playwrightChain = new LLMChain({ prompt: playwrightPromptTemplate, llm: playwrightLLM });
       const criticChain = new LLMChain({ prompt: criticPromptTemplate, llm: criticLLM });
@@ -62,8 +82,9 @@ export async function POST(req: Request) {
       });
 
       // Run the overall chain
-      await overallChain.run(input);
-
+      overallChain.call({ input }).catch((e: Error) => console.error(e));
+      
+      console.log('returning response');
       // Return the readable side of the TransformStream as the HTTP response.
       return new Response(stream.readable, {
         headers: { 'Content-Type': 'text/event-stream' },
