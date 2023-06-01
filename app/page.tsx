@@ -1,15 +1,13 @@
 "use client";
-import { fetchEventSource } from "@microsoft/fetch-event-source";
-import {
-  FormEvent,
-  useCallback,
+import React, {
   useState,
-  ChangeEvent,
-  useRef,
   useEffect,
+  useRef,
+  useCallback,
+  ChangeEvent,
+  FormEvent,
 } from "react";
-
-export const runtime = "edge";
+import { fetchEventSource } from "@microsoft/fetch-event-source";
 
 interface Message {
   id: string;
@@ -18,23 +16,7 @@ interface Message {
 }
 
 const Chat: React.FC = () => {
-  useEffect(() => {
-    const updateHeight = () => {
-      document.documentElement.style.setProperty(
-        "--app-height",
-        `${window.innerHeight}px`
-      );
-    };
-
-    window.addEventListener("resize", updateHeight);
-    updateHeight();
-
-    // Cleanup on component unmount
-    return () => window.removeEventListener("resize", updateHeight);
-  }, []); // Empty dependency array ensures this runs once on mount and cleanup on unmount
-
-  const [stream, setStream] = useState<boolean>(true);
-
+  const messagesEndRef = useRef<HTMLDivElement>(null);
   const [input, setInput] = useState<string>("");
   const [messages, setMessages] = useState<Message[]>([
     {
@@ -44,7 +26,40 @@ const Chat: React.FC = () => {
     },
   ]);
   const [inflight, setInflight] = useState<boolean>(false);
-  const botMessageRef = useRef<{ id: string; content: string } | null>(null);
+  const botMessageRef = useRef<Message | null>(null);
+  const [stream, setStream] = useState<boolean>(true);
+  const streamEndMessages = [
+    "That's a goal anyone can be proud of. Let's choose a target audience. 🎯",
+    "Excellent. Here's a survey topic! 📝",
+    "Awesome! How about a survey title? 📃",
+    "Perfect, let's keep going. How about a survey question. 🤔",
+    "Now some survey answers for that question! 💡",
+    "Fantastic! We've polished our survey answers. 💎",
+  ];
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages]);
+
+  const handleInputChange = (e: ChangeEvent<HTMLInputElement>) => {
+    setInput(e.target.value);
+  };
+
+  const handleSurveyAnswer = (answer: string) => {
+    setInput(answer);
+  };
+
+  const parseAnswers = (answersString: string): string[] => {
+    try {
+      const answers = JSON.parse(answersString);
+      if (Array.isArray(answers)) {
+        return answers;
+      }
+    } catch (error) {
+      console.error("Invalid JSON in answers:", error);
+    }
+    return [answersString]; // Return the original string if parsing fails
+  };
+
   const onSubmit = useCallback(
     async (e: FormEvent) => {
       e.preventDefault();
@@ -57,13 +72,19 @@ const Chat: React.FC = () => {
         content: input,
       };
       setMessages((prev) => [...prev, userMessage]);
-
+      const startStreamMessage: Message = {
+        id: Date.now().toString(),
+        sender: "bot",
+        content: `Coming up with a business goal 🤓.`,
+      };
+      setMessages((prevMessages) => [...prevMessages, startStreamMessage]);
       setInflight(true);
 
       try {
         if (stream) {
           let isFirstChunk = true;
           let businessTopic = input;
+          let streamIndex = 1;
           await fetchEventSource(`/api/generate`, {
             method: "POST",
             body: JSON.stringify({ businessTopic }),
@@ -71,25 +92,31 @@ const Chat: React.FC = () => {
             onmessage(ev) {
               const newChunk = ev.data;
               if (newChunk.startsWith("stream") && newChunk.endsWith("Ended")) {
-                // Reset bot message reference
+                const endStreamMessage: Message = {
+                  id: Date.now().toString(),
+                  sender: "bot",
+                  content:
+                    streamEndMessages[streamIndex - 1] ||
+                    `Stream ${streamIndex} ended.`,
+                };
+                setMessages((prevMessages) => [
+                  ...prevMessages,
+                  endStreamMessage,
+                ]);
                 botMessageRef.current = null;
                 isFirstChunk = true;
+                streamIndex++;
               } else {
                 if (isFirstChunk) {
-                  // Create new bot message, store it in the ref, and add it to the state
                   const botMessage: Message = {
                     id: Date.now().toString(),
                     sender: "bot",
                     content: newChunk,
                   };
-                  botMessageRef.current = {
-                    id: botMessage.id,
-                    content: newChunk,
-                  };
+                  botMessageRef.current = botMessage;
                   setMessages((prevMessages) => [...prevMessages, botMessage]);
                   isFirstChunk = false;
                 } else {
-                  // Append new chunk to the current bot message
                   if (botMessageRef.current) {
                     botMessageRef.current.content += newChunk;
                     setMessages((prevMessages) => {
@@ -115,7 +142,6 @@ const Chat: React.FC = () => {
           setInput("");
         } else {
           let businessTopic = input;
-
           const res = await fetch(`/api/generate`, {
             method: "POST",
             body: JSON.stringify({ businessTopic }),
@@ -135,42 +161,46 @@ const Chat: React.FC = () => {
         setInflight(false);
       }
     },
-    [input, stream, inflight, messages]
+    [input, stream, inflight]
   );
-
-  const handleInputChange = (e: ChangeEvent<HTMLInputElement>) => {
-    setInput(e.target.value);
+  const isValidJson = (json: string): boolean => {
+    try {
+      JSON.parse(json);
+      return true;
+    } catch {
+      return false;
+    }
   };
-  const handleSurveyAnswer = (answer: string) => {
-    setInput(answer);
-  };
-
   return (
     <div className="mx-auto max-w-2xl border rounded h-screen flex flex-col">
       <div className="w-full p-6 overflow-auto flex-grow">
         <ul className="space-y-2">
-          {messages.map((message) => {
-            const surveyRegex =
-              /{[\s\S]*"question":\s*"(.*)",\s*"answers":\s*\[([\s\S]*)\]\s*}/;
-            const match = message.content.match(surveyRegex);
+          {messages.map((message, index) => {
+            let surveyQuestion: string | null = null;
+            let surveyAnswers: string[] | null = null;
 
-            if (match) {
-              const question = match[1];
-              const answers = match[2]
-                .split(",")
-                .map((answer) => answer.trim().replace(/"/g, ""));
+            if (isValidJson(message.content)) {
+              const messageObj = JSON.parse(message.content);
+              if (messageObj.surveyAnswers) {
+                surveyQuestion = messageObj.surveyAnswers.question;
+                surveyAnswers = parseAnswers(
+                  JSON.stringify(messageObj.surveyAnswers.answers)
+                );
+              }
+            }
 
+            if (surveyQuestion && surveyAnswers) {
               return (
                 <li
-                  key={message.id}
+                  key={`${message.id}_${index}`}
                   className={`flex ${
                     message.sender === "user" ? "justify-end" : "justify-start"
                   }`}
                 >
                   <div className="relative max-w-xl px-4 py-2 text-gray-600 bg-white rounded-md shadow-md">
-                    <div className="mb-2">{question}</div>
+                    <div className="mb-2">{surveyQuestion}</div>
                     <div className="flex flex-wrap justify-between">
-                      {answers.map((answer, index) => (
+                      {surveyAnswers.map((answer, index) => (
                         <button
                           key={index}
                           className="px-4 py-2 mr-2 mb-2 bg-blue-500 text-white rounded-md"
@@ -186,7 +216,7 @@ const Chat: React.FC = () => {
             } else {
               return (
                 <li
-                  key={message.id}
+                  key={`${message.id}_${index}`}
                   className={`flex ${
                     message.sender === "user" ? "justify-end" : "justify-start"
                   }`}
@@ -198,6 +228,7 @@ const Chat: React.FC = () => {
               );
             }
           })}
+          <div ref={messagesEndRef} />
         </ul>
       </div>
       <form

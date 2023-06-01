@@ -8,17 +8,22 @@ import {
 } from "langchain/prompts";
 import { StructuredOutputParser } from "langchain/output_parsers";
 import { z } from "zod";
+import { BufferMemory } from "langchain/memory";
 
 const surveyAnswersSchema = z.object({
   question: z.string().describe("Question"),
   answers: z.array(z.string()).describe("Answers"),
 });
-const businessGoalTemplate = `You are a business strategist. Given the {businessTopic}, it is your job to establish a business goal in less than 50 words.
+
+const parser = StructuredOutputParser.fromZodSchema(surveyAnswersSchema);
+
+const formatInstructions = parser.getFormatInstructions();
+
+const businessGoalTemplate = `You are a business strategist. Given the {businessTopic}, it is your job to establish a business goal in less than 50 words. Include the business topic in your response.
 Business Topic: {businessTopic}
 Business Goal:`;
 
-const targetAudienceTemplate = `You are a marketing analyst. Given the {businessGoal} and original {businessTopic}, it's your job to define a target audience in less than 20 words.
-Business Topic: {businessTopic}
+const targetAudienceTemplate = `You are a marketing analyst. Given the {businessGoal} and original businessTopic, it's your job to define a target audience in less than 20 words.
 Business Goal: {businessGoal}
 Target Audience:`;
 
@@ -45,8 +50,7 @@ const businessGoalPromptTemplate = new PromptTemplate({
 
 const targetAudiencePromptTemplate = new PromptTemplate({
   template: targetAudienceTemplate,
-  inputVariables: ["businessGoal"],
-  partialVariables: { businessTopic: "businessTopic" },
+  inputVariables: ["businessGoal", "businessTopic"],
 });
 
 const surveyTypePromptTemplate = new PromptTemplate({
@@ -63,10 +67,6 @@ const surveyQuestionPromptTemplate = new PromptTemplate({
   template: surveyQuestionTemplate,
   inputVariables: ["surveyTitle"],
 });
-
-const parser = StructuredOutputParser.fromZodSchema(surveyAnswersSchema);
-
-const formatInstructions = parser.getFormatInstructions();
 
 const surveyAnswersPromptTemplate = new PromptTemplate({
   template: surveyAnswersTemplate,
@@ -142,13 +142,15 @@ export async function POST(req: Request) {
           prompt: prompt,
           outputKey: outputKey,
           outputParser,
+          verbose: true,
         });
       });
       const overallChain = new SequentialChain({
         chains: chains,
         inputVariables: ["businessTopic"],
         outputVariables: ["surveyAnswers"],
-        verbose: true,
+
+        memory: new BufferMemory(),
       });
 
       overallChain
