@@ -1,34 +1,82 @@
 import { ChatOpenAI } from "langchain/chat_models/openai";
-import { LLMChain, SimpleSequentialChain } from "langchain/chains";
+import { LLMChain, SequentialChain } from "langchain/chains";
 import { CallbackManager } from "langchain/callbacks";
 import {
   ChatPromptTemplate,
   HumanMessagePromptTemplate,
   PromptTemplate,
 } from "langchain/prompts";
+import { StructuredOutputParser } from "langchain/output_parsers";
+import { z } from "zod";
 
-// Define the PromptTemplates for the playwright and critic scenarios.
-const playwrightTemplate = `You are a playwright. Given the {input}, it is your job to write a synopsis for that title.
-Title: {input}
-Playwright: This is a synopsis for the above play:`;
-const criticTemplate = `You are a play critic from the New York Times. Given the synopsis of play, it is your job to write a review for that play.
-Play Synopsis:
-{synopsis}
-Review from a New York Times play critic of the above play:`;
-const playwrightPromptTemplate = new PromptTemplate({
-  template: playwrightTemplate,
-  inputVariables: ["input"],
+const surveyAnswersSchema = z.object({
+  question: z.string().describe("Question"),
+  answers: z.array(z.string()).describe("Answers"),
 });
-const criticPromptTemplate = new PromptTemplate({
-  template: criticTemplate,
-  inputVariables: ["synopsis"],
+const businessGoalTemplate = `You are a business strategist. Given the {businessTopic}, it is your job to establish a business goal in less than 50 words.
+Business Topic: {businessTopic}
+Business Goal:`;
+
+const targetAudienceTemplate = `You are a marketing analyst. Given the {businessGoal} and original {businessTopic}, it's your job to define a target audience in less than 20 words.
+Business Topic: {businessTopic}
+Business Goal: {businessGoal}
+Target Audience:`;
+
+const surveyTypeTemplate = `You are a survey specialist. Given the input, business goal, and target audience, it's your job to determine the type of survey to conduct in less than 20 words.
+Target Audience: {targetAudience}
+Survey Type:`;
+
+const surveyTitleTemplate = `You are a content creator. Given the input, business goal, target audience, and survey type, it's your job to come up with a title for the survey.
+Survey Type: {surveyType}
+Survey Title:`;
+
+const surveyQuestionTemplate = `You are a survey designer. Given the survey title, come up with the first question of the survey.
+Survey Title: {surveyTitle}
+Survey Question:`;
+
+const surveyAnswersTemplate = `You are a survey designer. Generate 4-6 possible answers for the survey question.\n{format_instructions}
+Survey Question: {surveyQuestion}
+Survey Answers:`;
+
+const businessGoalPromptTemplate = new PromptTemplate({
+  template: businessGoalTemplate,
+  inputVariables: ["businessTopic"],
+});
+
+const targetAudiencePromptTemplate = new PromptTemplate({
+  template: targetAudienceTemplate,
+  inputVariables: ["businessGoal"],
+  partialVariables: { businessTopic: "businessTopic" },
+});
+
+const surveyTypePromptTemplate = new PromptTemplate({
+  template: surveyTypeTemplate,
+  inputVariables: ["targetAudience"],
+});
+
+const surveyTitlePromptTemplate = new PromptTemplate({
+  template: surveyTitleTemplate,
+  inputVariables: ["surveyType"],
+});
+
+const surveyQuestionPromptTemplate = new PromptTemplate({
+  template: surveyQuestionTemplate,
+  inputVariables: ["surveyTitle"],
+});
+
+const parser = StructuredOutputParser.fromZodSchema(surveyAnswersSchema);
+
+const formatInstructions = parser.getFormatInstructions();
+
+const surveyAnswersPromptTemplate = new PromptTemplate({
+  template: surveyAnswersTemplate,
+  inputVariables: ["surveyQuestion"],
+  partialVariables: { format_instructions: formatInstructions },
 });
 
 export async function POST(req: Request) {
   try {
-    const { input } = await req.json();
-
-    // Check if the request is for a streaming response.
+    const { businessTopic } = await req.json();
     const streaming = req.headers.get("accept") === "text/event-stream";
 
     if (streaming) {
@@ -38,102 +86,143 @@ export async function POST(req: Request) {
 
       let endCounter = 0;
 
-      const callbackManager1 = CallbackManager.fromHandlers({
-        handleLLMNewToken: async (token: string) => {
-          await writer.ready;
-          await writer.write(encoder.encode(`data: ${token}\n\n`));
-        },
-        handleLLMEnd: async () => {
-          endCounter++;
-          await writer.ready;
-          await writer.write(
-            encoder.encode(
-              `event: firstStreamEnded\ndata: event: firstStreamEnded\n\n`
-            )
-          );
-          if (endCounter === 2) {
-            await writer.close();
-          }
-        },
-        handleLLMError: async (e: Error) => {
-          await writer.ready;
-          await writer.abort(e);
-        },
-      });
+      const callbackManagers = Array(6)
+        .fill(null)
+        .map((_, i) => {
+          return CallbackManager.fromHandlers({
+            handleLLMNewToken: async (token: string) => {
+              await writer.ready;
+              if (endCounter < 5) {
+                await writer.write(encoder.encode(`data: ${token}\n\n`));
+              }
+            },
+            handleLLMEnd: async () => {
+              endCounter++;
+              await writer.ready;
+              await writer.write(
+                encoder.encode(
+                  `event: stream${i + 1}Ended\ndata: stream${i + 1}Ended\n\n`
+                )
+              );
+            },
+            handleLLMError: async (e: Error) => {
+              await writer.ready;
+              await writer.abort(e);
+            },
+          });
+        });
 
-      const callbackManager2 = CallbackManager.fromHandlers({
-        handleLLMNewToken: async (token: string) => {
-          await writer.ready;
-          await writer.write(encoder.encode(`data: ${token}\n\n`));
-        },
-        handleLLMEnd: async () => {
-          endCounter++;
-          if (endCounter === 2) {
-            await writer.ready;
-            await writer.close();
-          }
-        },
-        handleLLMError: async (e: Error) => {
-          await writer.ready;
-          await writer.abort(e);
-        },
-      });
+      const chains = [
+        businessGoalPromptTemplate,
+        targetAudiencePromptTemplate,
+        surveyTypePromptTemplate,
+        surveyTitlePromptTemplate,
+        surveyQuestionPromptTemplate,
+        surveyAnswersPromptTemplate,
+      ].map((prompt, i) => {
+        const llm = new ChatOpenAI({
+          streaming,
+          callbackManager: callbackManagers[i],
+        });
 
-      const playwrightLLM = new ChatOpenAI({
-        streaming,
-        callbackManager: callbackManager1,
+        const outputKey = [
+          "businessGoal",
+          "targetAudience",
+          "surveyType",
+          "surveyTitle",
+          "surveyQuestion",
+          "surveyAnswers",
+        ][i];
+        let outputParser;
+        if (outputKey === "surveyAnswers") {
+          outputParser = parser; // Add parser only to the surveyAnswers chain
+        }
+        return new LLMChain({
+          llm,
+          prompt: prompt,
+          outputKey: outputKey,
+          outputParser,
+        });
       });
-      const criticLLM = new ChatOpenAI({
-        streaming,
-        callbackManager: callbackManager2,
-      });
-
-      // Create the LangChain instances for playwright and critic
-      const playwrightChain = new LLMChain({
-        prompt: playwrightPromptTemplate,
-        llm: playwrightLLM,
-      });
-      const criticChain = new LLMChain({
-        prompt: criticPromptTemplate,
-        llm: criticLLM,
-      });
-
-      // Creating the overall chain
-      const overallChain = new SimpleSequentialChain({
-        chains: [playwrightChain, criticChain],
+      const overallChain = new SequentialChain({
+        chains: chains,
+        inputVariables: ["businessTopic"],
+        outputVariables: ["surveyAnswers"],
         verbose: true,
       });
 
-      // Run the overall chain
-      overallChain.call({ input }).catch((e: Error) => console.error(e));
+      overallChain
+        .call({ businessTopic })
+        .then(async (response) => {
+          await writer.ready;
+          const aiOutput = response;
+          console.log(aiOutput);
+
+          const msg = JSON.stringify(response);
+          await writer.write(
+            encoder.encode(`event: overallChainParsed\ndata: ${msg}\n\n`)
+          );
+          await writer.close();
+        })
+        .catch((e: Error) => console.error(e));
 
       console.log("returning response");
-      // Return the readable side of the TransformStream as the HTTP response.
+
       return new Response(stream.readable, {
         headers: { "Content-Type": "text/event-stream" },
       });
     } else {
-      // For a non-streaming response we can just await the result of the
-      // chain.run() call and return it.
-      const playwrightLLM = new ChatOpenAI();
-      const criticLLM = new ChatOpenAI();
+      const businessGoalLLM = new ChatOpenAI();
+      const targetAudienceLLM = new ChatOpenAI();
+      const surveyTypeLLM = new ChatOpenAI();
+      const surveyTitleLLM = new ChatOpenAI();
+      const surveyQuestionLLM = new ChatOpenAI();
+      const surveyAnswersLLM = new ChatOpenAI();
 
-      const playwrightChain = new LLMChain({
-        prompt: playwrightPromptTemplate,
-        llm: playwrightLLM,
-      });
-      const criticChain = new LLMChain({
-        prompt: criticPromptTemplate,
-        llm: criticLLM,
+      const businessGoalChain = new LLMChain({
+        prompt: businessGoalPromptTemplate,
+        llm: businessGoalLLM,
       });
 
-      // Creating the overall chain
-      const overallChain = new SimpleSequentialChain({
-        chains: [playwrightChain, criticChain],
+      const targetAudienceChain = new LLMChain({
+        prompt: targetAudiencePromptTemplate,
+        llm: targetAudienceLLM,
+      });
+
+      const surveyTypeChain = new LLMChain({
+        prompt: surveyTypePromptTemplate,
+        llm: surveyTypeLLM,
+      });
+
+      const surveyTitleChain = new LLMChain({
+        prompt: surveyTitlePromptTemplate,
+        llm: surveyTitleLLM,
+      });
+
+      const surveyQuestionChain = new LLMChain({
+        prompt: surveyQuestionPromptTemplate,
+        llm: surveyQuestionLLM,
+      });
+
+      const surveyAnswersChain = new LLMChain({
+        prompt: surveyAnswersPromptTemplate,
+        llm: surveyAnswersLLM,
+      });
+
+      const overallChain = new SequentialChain({
+        chains: [
+          businessGoalChain,
+          targetAudienceChain,
+          surveyTypeChain,
+          surveyTitleChain,
+          surveyQuestionChain,
+          surveyAnswersChain,
+        ],
+        inputVariables: ["businessTopic"],
         verbose: true,
       });
 
-      const response = await overallChain.run(input);
+      const response = await overallChain.run(businessTopic);
 
       return new Response(JSON.stringify(response), {
         headers: { "Content-Type": "application/json" },
