@@ -6,12 +6,19 @@ import {
   HumanMessagePromptTemplate,
   PromptTemplate,
 } from "langchain/prompts";
+import { StructuredOutputParser } from "langchain/output_parsers";
+import { z } from "zod";
 
-const businessGoalTemplate = `You are a business strategist. Given the {input}, it is your job to establish a business goal in less than 50 words.
-Input: {input}
+const surveyAnswersSchema = z.object({
+  question: z.string().describe("Question"),
+  answers: z.array(z.string()).describe("Answers"),
+});
+const businessGoalTemplate = `You are a business strategist. Given the {businessTopic}, it is your job to establish a business goal in less than 50 words.
+Business Topic: {businessTopic}
 Business Goal:`;
 
-const targetAudienceTemplate = `You are a marketing analyst. Given the business goal and original input, it's your job to define a target audience in less than 20 words.
+const targetAudienceTemplate = `You are a marketing analyst. Given the {businessGoal} and original {businessTopic}, it's your job to define a target audience in less than 20 words.
+Business Topic: {businessTopic}
 Business Goal: {businessGoal}
 Target Audience:`;
 
@@ -23,14 +30,23 @@ const surveyTitleTemplate = `You are a content creator. Given the input, busines
 Survey Type: {surveyType}
 Survey Title:`;
 
+const surveyQuestionTemplate = `You are a survey designer. Given the survey title, come up with the first question of the survey.
+Survey Title: {surveyTitle}
+Survey Question:`;
+
+const surveyAnswersTemplate = `You are a survey designer. Generate 4-6 possible answers for the survey question.\n{format_instructions}
+Survey Question: {surveyQuestion}
+Survey Answers:`;
+
 const businessGoalPromptTemplate = new PromptTemplate({
   template: businessGoalTemplate,
-  inputVariables: ["input"],
+  inputVariables: ["businessTopic"],
 });
 
 const targetAudiencePromptTemplate = new PromptTemplate({
   template: targetAudienceTemplate,
   inputVariables: ["businessGoal"],
+  partialVariables: { businessTopic: "businessTopic" },
 });
 
 const surveyTypePromptTemplate = new PromptTemplate({
@@ -43,9 +59,24 @@ const surveyTitlePromptTemplate = new PromptTemplate({
   inputVariables: ["surveyType"],
 });
 
+const surveyQuestionPromptTemplate = new PromptTemplate({
+  template: surveyQuestionTemplate,
+  inputVariables: ["surveyTitle"],
+});
+
+const parser = StructuredOutputParser.fromZodSchema(surveyAnswersSchema);
+
+const formatInstructions = parser.getFormatInstructions();
+
+const surveyAnswersPromptTemplate = new PromptTemplate({
+  template: surveyAnswersTemplate,
+  inputVariables: ["surveyQuestion"],
+  partialVariables: { format_instructions: formatInstructions },
+});
+
 export async function POST(req: Request) {
   try {
-    const { input } = await req.json();
+    const { businessTopic } = await req.json();
     const streaming = req.headers.get("accept") === "text/event-stream";
 
     if (streaming) {
@@ -55,14 +86,15 @@ export async function POST(req: Request) {
 
       let endCounter = 0;
 
-      // Generate CallbackManager for each stream
-      const callbackManagers = Array(4)
+      const callbackManagers = Array(6)
         .fill(null)
         .map((_, i) => {
           return CallbackManager.fromHandlers({
             handleLLMNewToken: async (token: string) => {
               await writer.ready;
-              await writer.write(encoder.encode(`data: ${token}\n\n`));
+              if (endCounter < 5) {
+                await writer.write(encoder.encode(`data: ${token}\n\n`));
+              }
             },
             handleLLMEnd: async () => {
               endCounter++;
@@ -72,9 +104,6 @@ export async function POST(req: Request) {
                   `event: stream${i + 1}Ended\ndata: stream${i + 1}Ended\n\n`
                 )
               );
-              if (endCounter === 4) {
-                await writer.close();
-              }
             },
             handleLLMError: async (e: Error) => {
               await writer.ready;
@@ -83,47 +112,72 @@ export async function POST(req: Request) {
           });
         });
 
-      // Create LLMChain for each step
       const chains = [
         businessGoalPromptTemplate,
         targetAudiencePromptTemplate,
         surveyTypePromptTemplate,
         surveyTitlePromptTemplate,
+        surveyQuestionPromptTemplate,
+        surveyAnswersPromptTemplate,
       ].map((prompt, i) => {
         const llm = new ChatOpenAI({
           streaming,
           callbackManager: callbackManagers[i],
         });
+
         const outputKey = [
           "businessGoal",
           "targetAudience",
           "surveyType",
           "surveyTitle",
-        ][i]; // Add this line
-        return new LLMChain({ llm, prompt: prompt, outputKey: outputKey }); // Add outputKey here
+          "surveyQuestion",
+          "surveyAnswers",
+        ][i];
+        let outputParser;
+        if (outputKey === "surveyAnswers") {
+          outputParser = parser; // Add parser only to the surveyAnswers chain
+        }
+        return new LLMChain({
+          llm,
+          prompt: prompt,
+          outputKey: outputKey,
+          outputParser,
+        });
       });
-
       const overallChain = new SequentialChain({
         chains: chains,
-        inputVariables: ["input"],  // Add this line
-        outputVariables: ["surveyTitle"],  // Add this line
+        inputVariables: ["businessTopic"],
+        outputVariables: ["surveyAnswers"],
         verbose: true,
       });
 
-      // Run the overall chain
-      overallChain.call({ input }).catch((e: Error) => console.error(e));
+      overallChain
+        .call({ businessTopic })
+        .then(async (response) => {
+          await writer.ready;
+          const aiOutput = response;
+          console.log(aiOutput);
+
+          const msg = JSON.stringify(response);
+          await writer.write(
+            encoder.encode(`event: overallChainParsed\ndata: ${msg}\n\n`)
+          );
+          await writer.close();
+        })
+        .catch((e: Error) => console.error(e));
 
       console.log("returning response");
+
       return new Response(stream.readable, {
         headers: { "Content-Type": "text/event-stream" },
       });
     } else {
-      // For a non-streaming response we can just await the result of the
-      // overallChain.run() call and return it.
       const businessGoalLLM = new ChatOpenAI();
       const targetAudienceLLM = new ChatOpenAI();
       const surveyTypeLLM = new ChatOpenAI();
       const surveyTitleLLM = new ChatOpenAI();
+      const surveyQuestionLLM = new ChatOpenAI();
+      const surveyAnswersLLM = new ChatOpenAI();
 
       const businessGoalChain = new LLMChain({
         prompt: businessGoalPromptTemplate,
@@ -145,20 +199,30 @@ export async function POST(req: Request) {
         llm: surveyTitleLLM,
       });
 
-      // Creating the overall chain
-      // Creating the overall chain
+      const surveyQuestionChain = new LLMChain({
+        prompt: surveyQuestionPromptTemplate,
+        llm: surveyQuestionLLM,
+      });
+
+      const surveyAnswersChain = new LLMChain({
+        prompt: surveyAnswersPromptTemplate,
+        llm: surveyAnswersLLM,
+      });
+
       const overallChain = new SequentialChain({
         chains: [
           businessGoalChain,
           targetAudienceChain,
           surveyTypeChain,
           surveyTitleChain,
+          surveyQuestionChain,
+          surveyAnswersChain,
         ],
-        inputVariables: ["input"], // Add this line
+        inputVariables: ["businessTopic"],
         verbose: true,
       });
 
-      const response = await overallChain.run(input);
+      const response = await overallChain.run(businessTopic);
 
       return new Response(JSON.stringify(response), {
         headers: { "Content-Type": "application/json" },

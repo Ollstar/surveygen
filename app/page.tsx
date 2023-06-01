@@ -1,6 +1,13 @@
 "use client";
 import { fetchEventSource } from "@microsoft/fetch-event-source";
-import { FormEvent, useCallback, useState, ChangeEvent, useRef, useEffect } from "react";
+import {
+  FormEvent,
+  useCallback,
+  useState,
+  ChangeEvent,
+  useRef,
+  useEffect,
+} from "react";
 
 export const runtime = "edge";
 
@@ -13,14 +20,17 @@ interface Message {
 const Chat: React.FC = () => {
   useEffect(() => {
     const updateHeight = () => {
-      document.documentElement.style.setProperty('--app-height', `${window.innerHeight}px`);
+      document.documentElement.style.setProperty(
+        "--app-height",
+        `${window.innerHeight}px`
+      );
     };
 
-    window.addEventListener('resize', updateHeight);
+    window.addEventListener("resize", updateHeight);
     updateHeight();
 
     // Cleanup on component unmount
-    return () => window.removeEventListener('resize', updateHeight);
+    return () => window.removeEventListener("resize", updateHeight);
   }, []); // Empty dependency array ensures this runs once on mount and cleanup on unmount
 
   const [stream, setStream] = useState<boolean>(true);
@@ -53,9 +63,10 @@ const Chat: React.FC = () => {
       try {
         if (stream) {
           let isFirstChunk = true;
+          let businessTopic = input;
           await fetchEventSource(`/api/generate`, {
             method: "POST",
-            body: JSON.stringify({ input }),
+            body: JSON.stringify({ businessTopic }),
             headers: { "Content-Type": "application/json" },
             onmessage(ev) {
               const newChunk = ev.data;
@@ -100,13 +111,14 @@ const Chat: React.FC = () => {
                 }
               }
             },
-            
           });
           setInput("");
         } else {
+          let businessTopic = input;
+
           const res = await fetch(`/api/generate`, {
             method: "POST",
-            body: JSON.stringify({ input }),
+            body: JSON.stringify({ businessTopic }),
           });
           const data = await res.json();
           const newMessage: Message = {
@@ -129,26 +141,69 @@ const Chat: React.FC = () => {
   const handleInputChange = (e: ChangeEvent<HTMLInputElement>) => {
     setInput(e.target.value);
   };
+  const handleSurveyAnswer = (answer: string) => {
+    setInput(answer);
+  };
 
   return (
     <div className="mx-auto max-w-2xl border rounded h-screen flex flex-col">
       <div className="w-full p-6 overflow-auto flex-grow">
         <ul className="space-y-2">
-          {messages.map((message) => (
-            <li
-              key={message.id}
-              className={`flex ${
-                message.sender === "user" ? "justify-end" : "justify-start"
-              }`}
-            >
-              <div className="relative max-w-xl px-4 py-2 text-gray-600 bg-white rounded-md shadow-md">
-                {message.content}
-              </div>
-            </li>
-          ))}
+          {messages.map((message) => {
+            const surveyRegex =
+              /{[\s\S]*"question":\s*"(.*)",\s*"answers":\s*\[([\s\S]*)\]\s*}/;
+            const match = message.content.match(surveyRegex);
+
+            if (match) {
+              const question = match[1];
+              const answers = match[2]
+                .split(",")
+                .map((answer) => answer.trim().replace(/"/g, ""));
+
+              return (
+                <li
+                  key={message.id}
+                  className={`flex ${
+                    message.sender === "user" ? "justify-end" : "justify-start"
+                  }`}
+                >
+                  <div className="relative max-w-xl px-4 py-2 text-gray-600 bg-white rounded-md shadow-md">
+                    <div className="mb-2">{question}</div>
+                    <div className="flex flex-wrap justify-between">
+                      {answers.map((answer, index) => (
+                        <button
+                          key={index}
+                          className="px-4 py-2 mr-2 mb-2 bg-blue-500 text-white rounded-md"
+                          onClick={() => handleSurveyAnswer(answer)}
+                        >
+                          {answer}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </li>
+              );
+            } else {
+              return (
+                <li
+                  key={message.id}
+                  className={`flex ${
+                    message.sender === "user" ? "justify-end" : "justify-start"
+                  }`}
+                >
+                  <div className="relative max-w-xl px-4 py-2 text-gray-600 bg-white rounded-md shadow-md">
+                    {message.content}
+                  </div>
+                </li>
+              );
+            }
+          })}
         </ul>
       </div>
-      <form onSubmit={onSubmit} className="w-full flex p-3 border-t border-gray-300">
+      <form
+        onSubmit={onSubmit}
+        className="w-full flex p-3 border-t border-gray-300"
+      >
         <input
           type="text"
           value={input}
