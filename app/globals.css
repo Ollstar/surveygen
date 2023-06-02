@@ -78,13 +78,17 @@ body {
 
 /* User message */
 .message-container-user {
-  @apply bg-blue-500 text-white;
+  @apply bg-blue-200 border-r-4 border-blue-500 p-4;
 }
 
-/* Streamed response */
 .message-container.streamed-response {
   @apply bg-orange-200 border-none text-black p-2 text-center no-underline inline-block text-sm m-1 cursor-pointer rounded;
+  overflow-wrap: break-word;
+  white-space: normal;
+  min-height: 30px;
+  max-height: 100px;
 }
+
 
 .message-input {
   @apply w-full h-10 px-3 py-2 text-gray-700 placeholder-gray-300 border rounded-md focus:outline-none;

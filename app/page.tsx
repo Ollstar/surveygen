@@ -75,6 +75,7 @@ const Chat: React.FC = () => {
         type: "user",
       };
       setMessages((prev) => [...prev, userMessage]);
+      setInput("");
 
       const startStreamMessage: Message = {
         id: Date.now().toString(),
@@ -264,6 +265,8 @@ const Chat: React.FC = () => {
           onChange={handleInputChange}
           className="message-input"
           placeholder="Type a message"
+          disabled={inflight} // disable the input field if the stream is ongoing
+
         />
         <button
           type="submit"
