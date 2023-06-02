@@ -68,8 +68,8 @@ body {
 
 /* Pre-stream bot message */
 .message-container-bot-pre-stream {
-  @apply bg-blue-200 border-l-4 border-blue-500 p-4;
-}
+  @apply text-black bg-transparent border-none;
+  box-shadow: none;}
 
 /* Streamed bot message */
 .message-container-bot-streamed {
