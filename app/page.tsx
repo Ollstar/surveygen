@@ -13,6 +13,7 @@ interface Message {
   id: string;
   sender: "user" | "bot";
   content: string;
+  type: "initial" | "pre-stream" | "streamed" | "user";
 }
 
 const Chat: React.FC = () => {
@@ -23,6 +24,7 @@ const Chat: React.FC = () => {
       id: Date.now().toString(),
       sender: "bot",
       content: "Describe your business.",
+      type: "initial",
     },
   ]);
   const [inflight, setInflight] = useState<boolean>(false);
@@ -33,7 +35,7 @@ const Chat: React.FC = () => {
     "Excellent. Here's a survey topic! 📝",
     "Awesome! How about a survey title? 📃",
     "Perfect, let's keep going. How about a survey question. 🤔",
-    "Now some survey answers for that question! 💡",
+    "Give me a moment to come up with some survey answers for that question! 💡",
     "Fantastic! We've polished our survey answers. 💎",
   ];
   useEffect(() => {
@@ -70,12 +72,15 @@ const Chat: React.FC = () => {
         id: Date.now().toString(),
         sender: "user",
         content: input,
+        type: "user",
       };
       setMessages((prev) => [...prev, userMessage]);
+
       const startStreamMessage: Message = {
         id: Date.now().toString(),
         sender: "bot",
         content: `Coming up with a business goal 🤓.`,
+        type: "pre-stream",
       };
       setMessages((prevMessages) => [...prevMessages, startStreamMessage]);
       setInflight(true);
@@ -91,6 +96,7 @@ const Chat: React.FC = () => {
             headers: { "Content-Type": "application/json" },
             onmessage(ev) {
               const newChunk = ev.data;
+
               if (newChunk.startsWith("stream") && newChunk.endsWith("Ended")) {
                 const endStreamMessage: Message = {
                   id: Date.now().toString(),
@@ -98,6 +104,7 @@ const Chat: React.FC = () => {
                   content:
                     streamEndMessages[streamIndex - 1] ||
                     `Stream ${streamIndex} ended.`,
+                  type: "pre-stream",
                 };
                 setMessages((prevMessages) => [
                   ...prevMessages,
@@ -112,6 +119,7 @@ const Chat: React.FC = () => {
                     id: Date.now().toString(),
                     sender: "bot",
                     content: newChunk,
+                    type: "streamed",
                   };
                   botMessageRef.current = botMessage;
                   setMessages((prevMessages) => [...prevMessages, botMessage]);
@@ -151,6 +159,7 @@ const Chat: React.FC = () => {
             id: Date.now().toString(),
             sender: "bot",
             content: data.text,
+            type: "streamed",
           };
           setMessages((prevMessages) => [...prevMessages, newMessage]);
           setInput("");
@@ -172,10 +181,11 @@ const Chat: React.FC = () => {
     }
   };
   return (
-    <div className="mx-auto max-w-2xl border rounded h-screen flex flex-col">
-      <div className="w-full p-6 overflow-auto flex-grow">
+    <div className="chat-container">
+      <div className="chat-messages">
         <ul className="space-y-2">
           {messages.map((message, index) => {
+            const isLastMessage = index === messages.length - 1; // Check if this message is the last one
             let surveyQuestion: string | null = null;
             let surveyAnswers: string[] | null = null;
 
@@ -197,13 +207,19 @@ const Chat: React.FC = () => {
                     message.sender === "user" ? "justify-end" : "justify-start"
                   }`}
                 >
-                  <div className="relative max-w-xl px-4 py-2 text-gray-600 bg-white rounded-md shadow-md">
+                  <div
+                    className={`message-container ${
+                      message.sender === "bot"
+                        ? "message-container-bot-" + message.type
+                        : "message-container-user"
+                    } ${isLastMessage ? "holographic-effect" : ""}`} // Apply the holographic effect if it's the last message
+                  >
                     <div className="mb-2">{surveyQuestion}</div>
-                    <div className="flex flex-wrap justify-between">
+                    <div className="button-grid">
                       {surveyAnswers.map((answer, index) => (
                         <button
                           key={index}
-                          className="px-4 py-2 mr-2 mb-2 bg-blue-500 text-white rounded-md"
+                          className="message-container streamed-response"
                           onClick={() => handleSurveyAnswer(answer)}
                         >
                           {answer}
@@ -221,13 +237,20 @@ const Chat: React.FC = () => {
                     message.sender === "user" ? "justify-end" : "justify-start"
                   }`}
                 >
-                  <div className="relative max-w-xl px-4 py-2 text-gray-600 bg-white rounded-md shadow-md">
+                  <div
+                    className={`message-container ${
+                      message.sender === "bot"
+                        ? "message-container-bot-" + message.type
+                        : "message-container-user"
+                    } ${isLastMessage ? "holographic-effect" : ""}`} // Apply the holographic effect if it's the last message
+                  >
                     {message.content}
                   </div>
                 </li>
               );
             }
           })}
+
           <div ref={messagesEndRef} />
         </ul>
       </div>
@@ -239,12 +262,14 @@ const Chat: React.FC = () => {
           type="text"
           value={input}
           onChange={handleInputChange}
-          className="w-full h-10 px-3 py-2 text-gray-700 placeholder-gray-300 border rounded-md focus:outline-none"
+          className="message-input"
           placeholder="Type a message"
         />
         <button
           type="submit"
-          className="ml-2 px-4 py-2 text-white bg-blue-500 rounded-full shadow-md hover:bg-blue-600 focus:outline-none"
+          className={
+            input.trim() !== "" ? "send-button" : "send-button-disabled"
+          }
         >
           Send
         </button>
