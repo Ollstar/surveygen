@@ -270,6 +270,7 @@ const Chat: React.FC = () => {
           className={
             input.trim() !== "" ? "send-button" : "send-button-disabled"
           }
+          disabled={!input.trim()} // Disable button if there is no message
         >
           Send
         </button>
