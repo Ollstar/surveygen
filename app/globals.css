@@ -68,7 +68,7 @@ body {
 
 /* Pre-stream bot message */
 .message-container-bot-pre-stream {
-  @apply text-black bg-transparent border-none;
+  @apply bg-transparent border-none;
   box-shadow: none;}
 
 /* Streamed bot message */
