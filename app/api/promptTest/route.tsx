@@ -100,7 +100,7 @@ export async function POST(req: Request) {
       callbackManager: callbackManager,
       modelName: "gpt-3.5-turbo-16k-0613",
       temperature: 0.9,
-      maxTokens: 1500,
+      maxTokens: 8000,
       cache: false,
     });
 

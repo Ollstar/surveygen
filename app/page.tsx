@@ -151,8 +151,7 @@ const Messages: React.FC = () => {
 
       <div className="pt-16">
         <h1 className="text-2xl font-bold mb-4">Prompt Test Page</h1>
-        <div className="flex items-center">
-        </div>
+        <div className="flex items-center"></div>
 
         <div className="flex">
           <div className="column">
@@ -160,7 +159,7 @@ const Messages: React.FC = () => {
             {statements.map((statement, index) => (
               <div key={index} className="card">
                 <div className="font-bold text-xl mb-2">{statement.type}</div>
-                <p className="text-gray-700 text-base">{statement.statement}</p>
+                <p className="text-gray-700 p-2 text-base">{statement.statement}</p>
                 <p className="mt-2 text-gray-500">
                   Choices:
                   {statement.choices &&
@@ -176,7 +175,15 @@ const Messages: React.FC = () => {
             {updatedStatements.map((statement, index) => (
               <div key={index} className="card">
                 <div className="font-bold text-xl mb-2">{statement.type}</div>
-                <p className="text-gray-700 text-base">{statement.statement}</p>
+                <p
+                  className={`text-gray-700 text-base p-2 rounded ${
+                    statement.statement !== statements[index].statement
+                      ? "bg-purple-100"
+                      : ""
+                  }`}
+                >
+                  {statement.statement}
+                </p>
                 <p className="mt-2 text-gray-500">
                   Choices:
                   {statement.choices &&
@@ -229,12 +236,12 @@ const Messages: React.FC = () => {
       >
         <h2 className="text-xl font-semibold mb-2 p-4">JSON Input:</h2>
         <div>
-            <h2>Tone Instructions:</h2>
-            <p>Tone Value: {toneInstructions.toneValue}</p>
-            <p>Negative Tone: {toneInstructions.negativeTone}</p>
-            <p>Emoji Quantity: {toneInstructions.emojiQuantity}</p>
-            <p>Talkative Range: {toneInstructions.talkativeRange}</p>
-          </div>
+          <h2>Tone Instructions:</h2>
+          <p>Tone Value: {toneInstructions.toneValue}</p>
+          <p>Negative Tone: {toneInstructions.negativeTone}</p>
+          <p>Emoji Quantity: {toneInstructions.emojiQuantity}</p>
+          <p>Talkative Range: {toneInstructions.talkativeRange}</p>
+        </div>
         <textarea
           id="json"
           style={{
@@ -245,7 +252,7 @@ const Messages: React.FC = () => {
           className="w-full p-4 border rounded overflow-y-scroll"
           defaultValue={inputJson}
         />
-        
+
         <button
           style={{ bottom: 0, right: 0 }}
           className="bg-blue-500 text-white py-2 px-4 rounded"
