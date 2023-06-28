@@ -1,7 +1,7 @@
 "use client";
 import React, { useState, useRef, useEffect, useCallback } from "react";
 // import { fetchEventSource } from "@microsoft/fetch-event-source";
-import { sampleJson, defaultPromptPrefix } from "./constants/sample-responses";
+import { sampleJson, defaultPromptPrefix } from "../constants/sample-responses";
 
 interface Statement {
   id: string;

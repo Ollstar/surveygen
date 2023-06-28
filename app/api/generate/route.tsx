@@ -15,15 +15,19 @@ const surveyAnswersSchema = z.object({
   answers: z.array(z.string()).describe("Answers"),
 });
 
+const memory = new BufferMemory();
+
 const parser = StructuredOutputParser.fromZodSchema(surveyAnswersSchema);
 
 const formatInstructions = parser.getFormatInstructions();
 
 const businessGoalTemplate = `You are a business strategist. Given the {businessTopic}, it is your job to establish a business goal in less than 50 words. Include the business topic in your response.
 Business Topic: {businessTopic}
-Business Goal:`;
+Business Goal:
+`;
 
-const targetAudienceTemplate = `You are a marketing analyst. Given the {businessGoal} and original businessTopic, it's your job to define a target audience in less than 20 words.
+const targetAudienceTemplate = `You are a marketing analyst. Given the {businessGoal} and original {businessTopic}, it's your job to define a target audience in less than 20 words.
+Business Topic: {businessTopic}
 Business Goal: {businessGoal}
 Target Audience:`;
 
@@ -39,9 +43,13 @@ const surveyQuestionTemplate = `You are a survey designer. Given the survey titl
 Survey Title: {surveyTitle}
 Survey Question:`;
 
-const surveyAnswersTemplate = `You are a survey designer. Generate 4-6 possible answers for the survey question.\n{format_instructions}
+const surveyAnswersTemplate = `You are a survey designer. Generate 4-6 possible answers for the {surveyQuestion}.\n{format_instructions}
 Survey Question: {surveyQuestion}
 Survey Answers:`;
+const surveyAnswers2Template = `You are a survey designer. Based on the first {surveyAnswers}, Generate a new question and 4-6 possible answers for a survey.
+Survey Answers: {surveyAnswers}
+QA2: `
+;
 
 const businessGoalPromptTemplate = new PromptTemplate({
   template: businessGoalTemplate,
@@ -72,6 +80,11 @@ const surveyAnswersPromptTemplate = new PromptTemplate({
   template: surveyAnswersTemplate,
   inputVariables: ["surveyQuestion"],
   partialVariables: { format_instructions: formatInstructions },
+});
+
+const surveyAnswers2PromptTemplate = new PromptTemplate({
+  template: surveyAnswers2Template,
+  inputVariables: ["surveyAnswers"],
 });
 
 export async function POST(req: Request) {
@@ -148,11 +161,8 @@ export async function POST(req: Request) {
       const overallChain = new SequentialChain({
         chains: chains,
         inputVariables: ["businessTopic"],
-        outputVariables: ["surveyAnswers"],
-
-        memory: new BufferMemory(),
+        returnAll: true,
       });
-
       overallChain
         .call({ businessTopic })
         .then(async (response) => {

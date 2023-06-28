@@ -114,3 +114,12 @@ body {
   50% { background-position: 100% 50%; }
   100% { background-position: 0% 50%; }
 }
+
+.drawer-header {
+  height: 2rem; /* This is an example, adjust it to your actual header height */
+}
+
+.textarea-in-drawer {
+  height: calc(100% - 2rem); /* Adjust this value based on your actual header height */
+  overflow-y: auto;
+}
