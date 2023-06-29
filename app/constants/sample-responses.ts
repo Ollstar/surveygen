@@ -270,21 +270,14 @@ export const defaultStatements = {
 };
 
 export const chatElementTypes = [
-  "Section",
-  "JumpAheadCard",
+  "TextMessageCard",
+  "SingleChoiceCard",
+  "MultipleChoiceCard",
   "OpenEndedImageCard",
   "OpenEndedVideoCard",
   "OpenEndedTextCard",
   "OpenEndedNumberCard",
-  "MultipleChoiceCard",
-  "ParticipationMarkerCard",
-  "RecontactCard",
-  "RecontactCardV2",
-  "RedirectCard",
-  "TextMessageCard",
-  "ImageMessageCard",
-  "VideoMessageCard",
-  "SingleChoiceCard"
+
 ];
 
 export const chatId = "de5e2784-a337-4483-92c8-3905b8270b7b";

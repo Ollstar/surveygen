@@ -58,7 +58,7 @@ export async function POST(req: Request) {
     RESPONSE_EXAMPLES,
     new OpenAIEmbeddings(),
     MemoryVectorStore,
-    { k: 5 }
+    { k: 3 }
   );
 
   const examples = await exampleSelector.selectExamples({

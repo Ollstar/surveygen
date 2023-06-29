@@ -9,6 +9,20 @@ import {
   researchDomain,
 } from "./constants/sample-responses";
 import StatementEditor from "./components/StatementEditor";
+import Dialog from "@mui/material/Dialog";
+import DialogTitle from "@mui/material/DialogTitle";
+import DialogContent from "@mui/material/DialogContent";
+import DialogActions from "@mui/material/DialogActions";
+import Button from "@mui/material/Button";
+import TextField from "@mui/material/TextField";
+import FormControl from "@mui/material/FormControl";
+import InputLabel from "@mui/material/InputLabel";
+import Select from "@mui/material/Select";
+import MenuItem from "@mui/material/MenuItem";
+import Typography from "@mui/material/Typography";
+import Slider from "@mui/material/Slider";
+import { Tooltip } from "@mui/material";
+import { InformationCircleIcon } from "@heroicons/react/24/solid";
 
 interface Statement {
   id: string;
@@ -162,57 +176,40 @@ const Messages: React.FC = () => {
   return (
     <div className="min-h-screen bg-gray-100 p-6">
       <div className="fixed top-0 left-0 right-0 bg-white z-50 flex justify-between items-center p-3 shadow">
-        <div>
+        <h1 className="text-2xl font-bold">Prompt Tester</h1>
+        <div className="flex">
           <button
             onClick={() => setJsonDrawerOpen(!jsonDrawerOpen)}
-            style={{ width: "260px" }}
-            className={`px-4 py-2 text-white rounded ${
-              jsonDrawerOpen
-                ? "bg-red-500 hover:bg-red-700"
-                : "bg-blue-500 hover:bg-blue-700"
-            }`}
+            className={`px-4 py-2 text-blue-500 hover:text-blue-700 hover:bg-gray-100 rounded mr-2`}
           >
-            {jsonDrawerOpen ? "CLOSE INPUT DRAWER" : "OPEN INPUT DRAWER"}
+            PROMPT SETTINGS
           </button>
-        </div>
-        <h1 className="text-2xl font-bold">Prompt Tester</h1>
-
-        <div>
           <button
-            style={{ width: "260px" }}
             onClick={() => setDrawerOpen(!drawerOpen)}
+            className={`px-4 py-2 text-blue-500 hover:text-blue-700 hover:bg-gray-100 rounded mr-2`}
+          >
+            PROMPT SCRIPT
+          </button>
+          <button
+            disabled={inflight}
+            onClick={onSubmit}
             className={`px-4 py-2 text-white rounded ${
-              drawerOpen
+              inflight
                 ? "bg-red-500 hover:bg-red-700"
                 : "bg-blue-500 hover:bg-blue-700"
             }`}
           >
-            {drawerOpen ? "CLOSE PROMPT DRAWER" : "OPEN PROMPT DRAWER"}
+            SUBMIT
           </button>
         </div>
       </div>
 
       <div id="mainContent" className="pt-14">
-        <div className="flex justify-between items-center">
-          <div className="w-1/2 text-right pr-2">
+        <div className="flex justify-end items-center mb-4">
+          <div className="flex flex-col items-end">
             <p className="text-lg">
               Api time: {new Date(currentTime).toISOString().substr(14, 9)}
             </p>
-          </div>
-          <div>
-            <button
-              disabled={inflight}
-              onClick={onSubmit}
-              className={`px-4 py-2 text-white rounded ${
-                inflight
-                  ? "bg-red-500 hover:bg-red-700"
-                  : "bg-blue-500 hover:bg-blue-700"
-              }`}
-            >
-              SUBMIT
-            </button>
-          </div>
-          <div className="w-1/2 pl-2">
             <p className="text-lg">
               Time per statement: {timePerStatement.toFixed(2)} seconds
             </p>
@@ -231,22 +228,39 @@ const Messages: React.FC = () => {
       {/* Drawer for Prompt */}
       <div
         id="promptDrawer"
-        className={`fixed top-16 rounded right-0 h-4/5 p-2 transform transition-transform duration-300 ease-in-out bg-gray-100 overflow-y-auto shadow-2xl w-1/2 ${
+        className={`fixed top-16 rounded right-0 h-full p-2 transform transition-transform duration-300 ease-in-out bg-gray-100 overflow-y-auto shadow-2xl w-1/2 ${
           drawerOpen ? "translate-x-0" : "translate-x-full"
         }`}
       >
-        <h2 className="text-xl font-semibold mb-2 p-4">Prompt:</h2>
+        <div className="flex justify-between items-center mb-4">
+          <h2 className="text-xl font-semibold">Prompt:</h2>
+          <Tooltip
+            title={
+              <p className="text-sm">
+                Use the input variables in your prompt by enclosing them in{" "}
+                {`{ }`} for example: {`{toneValue}`}. {`\n\nThere are 4 inputs: statements, toneValue, emojiQuantity, and talkativeRange.`}
+              </p>
+            }
+            arrow
+            placement="left"
+          >
+            <InformationCircleIcon className="h-10 w-10 text-gray-500" />
+          </Tooltip>
+        </div>
+        <p> Prefix: </p>
+
         <textarea
           id="prompt"
           style={{
-            height: "calc(90% - 8rem)",
+            height: "calc(90% - 12rem)",
             boxSizing: "border-box",
             resize: "none",
           }}
-          className="w-full p-4 border rounded overflow-y-scroll"
+          className="w-full p-4 border-none rounded overflow-y-scroll"
           defaultValue={prompt}
         />
-        <p className="text-gray-500 mt-4 mb-4">{staticPromptPart}</p>
+        <p> Suffix: </p>
+        <p className="text-gray-500 mb-4">{staticPromptPart}</p>
 
         <button
           className={`bg-blue-500 text-white py-2 px-4 rounded hover:bg-blue-700`}
@@ -257,133 +271,93 @@ const Messages: React.FC = () => {
             setDrawerOpen(false);
           }}
         >
-          OK
+          APPLY
         </button>
       </div>
 
-      {/* Drawer for JSON Input */}
-      <div
-        id="jsonDrawer"
-        className={`fixed top-16 left-0 p-2 rounded transform transition-transform duration-300 ease-in-out bg-gray-100 overflow-y-auto shadow-2xl w-96 ${
-          jsonDrawerOpen ? "translate-x-0" : "-translate-x-full"
-        }`}
+      <Dialog
+        open={jsonDrawerOpen}
+        onClose={() => setJsonDrawerOpen(false)}
+        aria-labelledby="form-dialog-title"
+        fullWidth
+        maxWidth="sm"
       >
-        <h2 className="text-xl font-semibold mb-2 p-4">JSON Input:</h2>
-        <div className="mb-4">
-          <label
-            className="block text-gray-700 text-sm font-bold mb-2"
-            htmlFor="toneValue"
-          >
-            Tone Value
-          </label>
-          <input
-            className="shadow appearance-none border-none rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-            id="toneValue"
-            type="text"
-            placeholder="Tone Value"
-            value={toneValue}
-            onChange={(e) => setToneValue(e.target.value)}
-          />
-        </div>
-        <div className="mb-4">
-          <label
-            className="block text-gray-700 text-sm font-bold mb-2"
-            htmlFor="negativeTone"
-          >
-            Negative Tone
-          </label>
-          <input
-            className="shadow appearance-none border-none rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-            id="negativeTone"
-            type="text"
-            placeholder="Negative Tone"
-            value={negativeTone}
-            onChange={(e) => setNegativeTone(e.target.value)}
-          />
-        </div>
-        <div className="mb-4">
-          <label
-            className="block text-gray-700 text-sm font-bold mb-2"
-            htmlFor="emojiQuantity"
-          >
-            Emoji Quantity
-          </label>
-          <select
-            className="shadow border-none rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-            id="emojiQuantity"
-            value={emojiQuantity}
-            onChange={(e) => setEmojiQuantity(e.target.value)}
-          >
-            <option value="">Select an option...</option>
-            <option value="ZERO: Zero emojis">ZERO: Zero emojis</option>
-            <option value="LOW: 1-2 emojis every 10 words">
-              LOW: 1-2 emojis every 10 words
-            </option>
-            <option value="MEDIUM: 1-2 emojis every 3-5 words">
-              MEDIUM: 1-2 emojis every 3-5 words
-            </option>
-            <option value="HIGH: 3-5 emojis every 3-5 words">
-              HIGH: 3-5 emojis every 3-5 words
-            </option>
-            <option value="VERY HIGH: 3-5 emojis every 1-2 words">
-              VERY HIGH: 3-5 emojis every 1-2 words
-            </option>
-          </select>
-        </div>
-        <div className="mb-4">
-          <label
-            className="block text-gray-700 text-sm font-bold mb-2"
-            htmlFor="talkativeRange"
-          >
-            Talkative Range
-          </label>
-          <div className="flex items-center">
+        <DialogTitle id="form-dialog-title">Prompt settings:</DialogTitle>
+        <DialogContent>
+          <div className="mb-4">
+            <label
+              className="block text-gray-700 text-md font-bold mb-2"
+              htmlFor="toneValue"
+            >
+              Tone descriptors
+            </label>
             <input
               className="shadow appearance-none border-none rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-              id="talkativeRange"
-              type="range"
-              min="0"
-              max="100"
-              value={talkativeRange}
-              onChange={(e) => setTalkativeRange(Number(e.target.value))}
+              id="toneValue"
+              type="text"
+              placeholder="Tone Value"
+              value={toneValue}
+              onChange={(e) => setToneValue(e.target.value)}
             />
-            <span className="text-gray-700 ml-2 w-8 text-center">
-              {talkativeRange}
-            </span>
           </div>
-        </div>
-
-        <div className="mb-4 flex flex-row-reverse">
+          <div className="mb-4">
+            <label
+              className="block text-gray-700 text-md font-bold mb-2"
+              htmlFor="emojiQuantity"
+            >
+              Emoji quantity
+            </label>
+            <select
+              className="shadow border-none rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+              id="emojiQuantity"
+              value={emojiQuantity}
+              onChange={(e) => setEmojiQuantity(e.target.value)}
+            >
+              <option value="">Select an option...</option>
+              <option value="ZERO: Zero emojis">ZERO: Zero emojis</option>
+              <option value="LOW: 1-2 emojis every 10 words">
+                LOW: 1-2 emojis every 10 words
+              </option>
+              <option value="MEDIUM: 1-2 emojis every 3-5 words">
+                MEDIUM: 1-2 emojis every 3-5 words
+              </option>
+              <option value="HIGH: 3-5 emojis every 3-5 words">
+                HIGH: 3-5 emojis every 3-5 words
+              </option>
+              <option value="VERY HIGH: 3-5 emojis every 1-2 words">
+                VERY HIGH: 3-5 emojis every 1-2 words
+              </option>
+            </select>
+          </div>
+          <label
+            className="block text-gray-700 text-md font-bold mb-2"
+            htmlFor="toneValue"
+          >
+            Talkative score (0-100)
+          </label>
+          <Slider
+            id="talkativeRange"
+            defaultValue={talkativeRange}
+            onChange={(e, newValue) => setTalkativeRange(newValue as number)}
+            aria-labelledby="range-slider"
+            valueLabelDisplay="auto"
+            step={25}
+            marks
+            min={0}
+            max={100}
+          />
+        </DialogContent>
+        <DialogActions>
           <button
             className={`bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline`}
             onClick={() => {
-              setToneValue(
-                (document.getElementById("toneValue") as HTMLInputElement).value
-              );
-              setNegativeTone(
-                (document.getElementById("negativeTone") as HTMLInputElement)
-                  .value
-              );
-              setEmojiQuantity(
-                (document.getElementById("emojiQuantity") as HTMLInputElement)
-                  .value
-              );
-              setTalkativeRange(
-                Number(
-                  (
-                    document.getElementById(
-                      "talkativeRange"
-                    ) as HTMLInputElement
-                  ).value
-                )
-              );
               setJsonDrawerOpen(false);
             }}
           >
-            OK
+            CLOSE
           </button>
-        </div>
-      </div>
+        </DialogActions>
+      </Dialog>
     </div>
   );
 };
