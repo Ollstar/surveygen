@@ -110,7 +110,7 @@ const StatementEditor: React.FC<StatementEditorProps> = ({
           onClick={addStatement}
           className="ml-6 px-4 py-2 bg-blue-500 hover:bg-blue-700 text-white rounded-md"
         >
-          Add Statement
+          ADD STATEMENT
         </button>
       </div>
       {statements.map((statement, index) => (
@@ -134,7 +134,7 @@ const StatementEditor: React.FC<StatementEditorProps> = ({
                 onClick={() => removeStatement(index)}
                 className="ml-2 px-4 py-2 bg-red-500 hover:bg-red-700 text-white rounded-md"
               >
-                Remove Statement
+                REMOVE STATEMENT
               </button>
             </div>
             <div className="w-full">
@@ -159,7 +159,7 @@ const StatementEditor: React.FC<StatementEditorProps> = ({
                     onClick={() => addChoice(index)}
                     className="ml-2 px-4 py-2 bg-blue-500 hover:bg-blue-700 text-white rounded-md"
                   >
-                    Add Choice
+                    ADD CHOICE
                   </button>
                 </div>
                 {Array.isArray(statement.choices) ? (

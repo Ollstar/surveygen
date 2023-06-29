@@ -231,7 +231,7 @@ const Messages: React.FC = () => {
       {/* Drawer for Prompt */}
       <div
         id="promptDrawer"
-        className={`fixed top-16 right-0 h-4/5 p-2 transform transition-transform duration-300 ease-in-out bg-white overflow-y-auto shadow-2xl w-1/2 ${
+        className={`fixed top-16 rounded right-0 h-4/5 p-2 transform transition-transform duration-300 ease-in-out bg-gray-100 overflow-y-auto shadow-2xl w-1/2 ${
           drawerOpen ? "translate-x-0" : "translate-x-full"
         }`}
       >
@@ -264,7 +264,7 @@ const Messages: React.FC = () => {
       {/* Drawer for JSON Input */}
       <div
         id="jsonDrawer"
-        className={`fixed top-16 left-0 p-2 transform transition-transform duration-300 ease-in-out bg-white overflow-y-auto shadow-2xl w-96 ${
+        className={`fixed top-16 left-0 p-2 rounded transform transition-transform duration-300 ease-in-out bg-gray-100 overflow-y-auto shadow-2xl w-96 ${
           jsonDrawerOpen ? "translate-x-0" : "-translate-x-full"
         }`}
       >
@@ -277,7 +277,7 @@ const Messages: React.FC = () => {
             Tone Value
           </label>
           <input
-            className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+            className="shadow appearance-none border-none rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
             id="toneValue"
             type="text"
             placeholder="Tone Value"
@@ -293,7 +293,7 @@ const Messages: React.FC = () => {
             Negative Tone
           </label>
           <input
-            className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+            className="shadow appearance-none border-none rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
             id="negativeTone"
             type="text"
             placeholder="Negative Tone"
@@ -309,7 +309,7 @@ const Messages: React.FC = () => {
             Emoji Quantity
           </label>
           <select
-            className="shadow border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+            className="shadow border-none rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
             id="emojiQuantity"
             value={emojiQuantity}
             onChange={(e) => setEmojiQuantity(e.target.value)}
@@ -339,7 +339,7 @@ const Messages: React.FC = () => {
           </label>
           <div className="flex items-center">
             <input
-              className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+              className="shadow appearance-none border-none rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
               id="talkativeRange"
               type="range"
               min="0"
