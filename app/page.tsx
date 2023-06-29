@@ -22,6 +22,7 @@ const Messages: React.FC = () => {
 
   const [statements, setStatements] = useState<Statement[]>([]);
   const [updatedStatements, setUpdatedStatements] = useState<Statement[]>([]);
+  const [timePerStatement, setTimePerStatement] = useState<number>(0);
 
   const [inputJson, setInputJson] = useState(sampleJson);
   const [prompt, setPrompt] = useState<string>(defaultPromptPrefix);
@@ -30,7 +31,7 @@ const Messages: React.FC = () => {
   const timerInterval = useRef<NodeJS.Timeout | null>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [jsonDrawerOpen, setJsonDrawerOpen] = useState(false);
-const staticPromptPart = `{examples}\n{format_instructions}\n Therefore here are the final Transformed Statements:`;
+  const staticPromptPart = `{examples}\n{format_instructions}\n Therefore here are the final Transformed Statements:`;
 
   const startTimer = useCallback(() => {
     setCurrentTime(0); // Reset the timer
@@ -83,8 +84,13 @@ const staticPromptPart = `{examples}\n{format_instructions}\n Therefore here are
         });
         stopTimer();
 
+
         const end = performance.now();
-        console.log("Request took", end - start, "milliseconds.");
+        const totalTime = end - start; // Calculate the total time
+        console.log("Request took", totalTime, "milliseconds.");
+        
+        // Calculate time per statement and set it
+        setTimePerStatement((totalTime / statements.length) / 1000);
 
         setUpdatedStatements(updated);
       } catch (error) {
@@ -129,7 +135,7 @@ const staticPromptPart = `{examples}\n{format_instructions}\n Therefore here are
         </div>
         <div className="flex items-center">
           <p className="text-lg">
-            Current Time: {new Date(currentTime).toISOString().substr(14, 9)}
+            Api time: {new Date(currentTime).toISOString().substr(14, 9)}
           </p>
           <button
             disabled={inflight}
@@ -140,6 +146,9 @@ const staticPromptPart = `{examples}\n{format_instructions}\n Therefore here are
           >
             Submit
           </button>
+          <p className="text-lg ml-4">
+          Time per statement: {timePerStatement.toFixed(2)} seconds
+  </p>
         </div>
         <div>
           <button
@@ -220,7 +229,7 @@ const staticPromptPart = `{examples}\n{format_instructions}\n Therefore here are
           className="w-full p-4 border rounded overflow-y-scroll"
           defaultValue={prompt}
         />
-          <p className="text-gray-500 mt-4">{staticPromptPart}</p>
+        <p className="text-gray-500 mt-4">{staticPromptPart}</p>
 
         <button
           className="bg-blue-500 text-white py-2 px-4 rounded"
@@ -261,7 +270,6 @@ const staticPromptPart = `{examples}\n{format_instructions}\n Therefore here are
         />
 
         <button
-
           className="bg-blue-500 text-white py-2 px-4 rounded"
           onClick={() => {
             setInputJson(
