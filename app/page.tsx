@@ -271,7 +271,7 @@ const Messages: React.FC = () => {
             setDrawerOpen(false);
           }}
         >
-          APPLY
+          SUBMIT
         </button>
       </div>
 
