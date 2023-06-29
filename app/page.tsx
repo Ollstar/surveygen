@@ -84,13 +84,12 @@ const Messages: React.FC = () => {
         });
         stopTimer();
 
-
         const end = performance.now();
         const totalTime = end - start; // Calculate the total time
         console.log("Request took", totalTime, "milliseconds.");
-        
+
         // Calculate time per statement and set it
-        setTimePerStatement((totalTime / statements.length) / 1000);
+        setTimePerStatement(totalTime / statements.length / 1000);
 
         setUpdatedStatements(updated);
       } catch (error) {
@@ -101,6 +100,23 @@ const Messages: React.FC = () => {
     },
     [inflight, inputJson]
   );
+  // Add this function within your component
+  const handleClickOutside = useCallback((event: MouseEvent) => {
+    const jsonDrawer = document.getElementById("jsonDrawer");
+    if (jsonDrawer && !jsonDrawer.contains(event.target as Node)) {
+      setJsonDrawerOpen(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    // Listen for clicks on the document
+    document.addEventListener("mousedown", handleClickOutside);
+
+    // Cleanup
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [handleClickOutside]);
 
   useEffect(() => {
     let parsed;
@@ -133,23 +149,8 @@ const Messages: React.FC = () => {
             {jsonDrawerOpen ? "Close JSON Drawer" : "Open JSON Drawer"}
           </button>
         </div>
-        <div className="flex items-center">
-          <p className="text-lg">
-            Api time: {new Date(currentTime).toISOString().substr(14, 9)}
-          </p>
-          <button
-            disabled={inflight}
-            onClick={onSubmit}
-            className={`px-4 py-2 text-white rounded ml-4 ${
-              inflight ? "bg-red-500" : "bg-blue-500"
-            }`}
-          >
-            Submit
-          </button>
-          <p className="text-lg ml-4">
-          Time per statement: {timePerStatement.toFixed(2)} seconds
-  </p>
-        </div>
+        <h1 className="text-2xl font-bold mb-4">Prompt Test Page</h1>
+
         <div>
           <button
             onClick={() => setDrawerOpen(!drawerOpen)}
@@ -163,12 +164,35 @@ const Messages: React.FC = () => {
       </div>
 
       <div className="pt-16">
-        <h1 className="text-2xl font-bold mb-4">Prompt Test Page</h1>
+      <div className="flex justify-between items-center">
+  <div className="w-1/2 text-right pr-2">
+    <p className="text-lg">
+      Api time: {new Date(currentTime).toISOString().substr(14, 9)}
+    </p>
+  </div>
+  <div>
+    <button
+      disabled={inflight}
+      onClick={onSubmit}
+      className={`px-4 py-2 text-white rounded ${
+        inflight ? "bg-red-500" : "bg-blue-500"
+      }`}
+    >
+      Submit
+    </button>
+  </div>
+  <div className="w-1/2 pl-2">
+    <p className="text-lg">
+      Time per statement: {timePerStatement.toFixed(2)} seconds
+    </p>
+  </div>
+</div>
+
         <div className="flex items-center"></div>
 
         <div className="flex">
           <div className="column">
-            <h2>Original Statements</h2>
+            <p className="header">Original Statements</p>
             {statements.map((statement, index) => (
               <div key={index} className="card">
                 <div className="font-bold text-xl mb-2">{statement.type}</div>
@@ -186,7 +210,8 @@ const Messages: React.FC = () => {
             ))}
           </div>
           <div className="column">
-            <h2>Updated Statements</h2>
+            <p className="header">Updated Statements</p>
+
             {updatedStatements.map((statement, index) => (
               <div key={index} className="card">
                 <div className="font-bold text-xl mb-2">{statement.type}</div>
@@ -237,7 +262,6 @@ const Messages: React.FC = () => {
             setPrompt(
               (document.getElementById("prompt") as HTMLTextAreaElement).value
             );
-            setDrawerOpen(false);
           }}
         >
           OK
@@ -275,7 +299,6 @@ const Messages: React.FC = () => {
             setInputJson(
               (document.getElementById("json") as HTMLTextAreaElement).value
             );
-            setJsonDrawerOpen(false);
           }}
         >
           OK

@@ -131,3 +131,8 @@ body {
   margin: 20px;
 }
 
+.header {
+  text-align: center;
+  font-size: 2rem; /* Modify this value as per your requirement */
+}
+
