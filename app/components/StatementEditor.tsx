@@ -105,12 +105,12 @@ const StatementEditor: React.FC<StatementEditorProps> = ({
 
   return (
     <div>
-      <div className="items-center">
+      <div className="items-center -mt-16">
         <button
           onClick={addStatement}
-          className="ml-6 px-4 py-2 bg-blue-500 hover:bg-blue-700 text-white rounded-md"
-        >
-          ADD STATEMENT
+          className={`px-4 py-2 text-blue-500 hover:text-blue-700 hover:bg-gray-200 rounded mr-2`}
+          >
+          ADD CARD
         </button>
       </div>
       {statements.map((statement, index) => (
@@ -122,7 +122,7 @@ const StatementEditor: React.FC<StatementEditorProps> = ({
                 onChange={(e) =>
                   handleStatementChange(index, "type", e.target.value)
                 }
-                className="text-gray-700 p-2 rounded border-none bg-gray-200 focus:border-blue-300 w-1/2"
+                className="text-gray-700 p-2 rounded border-none bg-gray-100 focus:border-blue-300 w-1/2"
               >
                 {chatElementTypes.map((option, optionIndex) => (
                   <option key={optionIndex} value={option}>
@@ -141,7 +141,7 @@ const StatementEditor: React.FC<StatementEditorProps> = ({
                 onChange={(e: ChangeEvent<HTMLTextAreaElement>) =>
                   handleStatementChange(index, "statement", e.target.value)
                 }
-                className="text-gray-700 p-2 w-full rounded border-none bg-gray-200  focus:border-blue-300 flex-grow"
+                className="text-gray-700 p-2 w-full rounded border-none bg-gray-100  focus:border-blue-300 flex-grow"
               />
             </div>
             {["MultipleChoiceCard", "SingleChoiceCard"].includes(
@@ -152,8 +152,8 @@ const StatementEditor: React.FC<StatementEditorProps> = ({
                   <p className="text-gray-500">Choices:</p>
                   <button
                     onClick={() => addChoice(index)}
-                    className="ml-2 px-4 py-2 bg-blue-500 hover:bg-blue-700 text-white rounded-md"
-                  >
+                    className={`ml-2 px-4 py-2 text-blue-500 hover:text-blue-700 hover:bg-gray-100 rounded mr-2`}
+                    >
                     ADD CHOICE
                   </button>
                 </div>
@@ -166,7 +166,7 @@ const StatementEditor: React.FC<StatementEditorProps> = ({
                         onChange={(e) =>
                           handleChoiceChange(index, choiceIndex, e.target.value)
                         }
-                        className="text-gray-700 p-2 rounded border-none bg-gray-200 focus:border-blue-300 flex-grow"
+                        className="text-gray-700 p-2 rounded border-none bg-gray-100 focus:border-blue-300 flex-grow"
                       />
                       <button
                         onClick={() => removeChoice(index, choiceIndex)}
@@ -185,9 +185,9 @@ const StatementEditor: React.FC<StatementEditorProps> = ({
     <div className="flex justify-end">
     <button
       onClick={() => removeStatement(index)}
-      className="px-4 py-2 bg-red-500 hover:bg-red-700 text-white rounded-md w-30"
-    >
-      REMOVE STATEMENT
+      className={`ml-2 px-4 py-2 text-blue-500 hover:text-blue-700 hover:bg-gray-100 rounded mr-2`}
+      >
+      REMOVE CARD
     </button>
   </div>    
           </div>
