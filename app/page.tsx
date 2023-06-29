@@ -223,7 +223,6 @@ const staticPromptPart = `{examples}\n{format_instructions}\n Therefore here are
           <p className="text-gray-500 mt-4">{staticPromptPart}</p>
 
         <button
-          style={{ position: "sticky", bottom: 0, left: 0 }}
           className="bg-blue-500 text-white py-2 px-4 rounded"
           onClick={() => {
             setPrompt(
@@ -262,7 +261,7 @@ const staticPromptPart = `{examples}\n{format_instructions}\n Therefore here are
         />
 
         <button
-          style={{ bottom: 0, right: 0 }}
+
           className="bg-blue-500 text-white py-2 px-4 rounded"
           onClick={() => {
             setInputJson(
