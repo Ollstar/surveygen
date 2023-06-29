@@ -130,12 +130,7 @@ const StatementEditor: React.FC<StatementEditorProps> = ({
                   </option>
                 ))}
               </select>
-              <button
-                onClick={() => removeStatement(index)}
-                className="ml-2 px-4 py-2 bg-red-500 hover:bg-red-700 text-white rounded-md"
-              >
-                REMOVE STATEMENT
-              </button>
+              
             </div>
             <div className="w-full">
               <textarea
@@ -185,7 +180,16 @@ const StatementEditor: React.FC<StatementEditorProps> = ({
                   <li>{statement.choices}</li>
                 )}
               </div>
+              
             )}
+    <div className="flex justify-end">
+    <button
+      onClick={() => removeStatement(index)}
+      className="px-4 py-2 bg-red-500 hover:bg-red-700 text-white rounded-md w-30"
+    >
+      REMOVE STATEMENT
+    </button>
+  </div>    
           </div>
           {updatedStatements && updatedStatements[index] && (
             <div className="card mt-4" style={{ alignSelf: "start" }}>
