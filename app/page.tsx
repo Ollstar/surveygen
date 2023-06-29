@@ -30,6 +30,7 @@ const Messages: React.FC = () => {
   const timerInterval = useRef<NodeJS.Timeout | null>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [jsonDrawerOpen, setJsonDrawerOpen] = useState(false);
+const staticPromptPart = `{examples}\n{format_instructions}\n Therefore here are the final Transformed Statements:`;
 
   const startTimer = useCallback(() => {
     setCurrentTime(0); // Reset the timer
@@ -131,8 +132,11 @@ const Messages: React.FC = () => {
             Current Time: {new Date(currentTime).toISOString().substr(14, 9)}
           </p>
           <button
+            disabled={inflight}
             onClick={onSubmit}
-            className="px-4 py-2 bg-blue-500 text-white rounded ml-4"
+            className={`px-4 py-2 text-white rounded ml-4 ${
+              inflight ? "bg-red-500" : "bg-blue-500"
+            }`}
           >
             Submit
           </button>
@@ -159,7 +163,9 @@ const Messages: React.FC = () => {
             {statements.map((statement, index) => (
               <div key={index} className="card">
                 <div className="font-bold text-xl mb-2">{statement.type}</div>
-                <p className="text-gray-700 p-2 text-base">{statement.statement}</p>
+                <p className="text-gray-700 p-2 text-base">
+                  {statement.statement}
+                </p>
                 <p className="mt-2 text-gray-500">
                   Choices:
                   {statement.choices &&
@@ -199,7 +205,7 @@ const Messages: React.FC = () => {
 
       {/* Drawer for Prompt */}
       <div
-        className={`fixed top-16 right-0 h-4/5 transform transition-transform duration-300 ease-in-out bg-white overflow-y-auto shadow-2xl w-96 ${
+        className={`fixed top-16 right-0 h-4/5 p-2 transform transition-transform duration-300 ease-in-out bg-white overflow-y-auto shadow-2xl w-96 ${
           drawerOpen ? "translate-x-0" : "translate-x-full"
         }`}
       >
@@ -207,13 +213,15 @@ const Messages: React.FC = () => {
         <textarea
           id="prompt"
           style={{
-            height: "calc(100% - 8rem)",
+            height: "calc(90% - 8rem)",
             boxSizing: "border-box",
             resize: "none",
           }}
           className="w-full p-4 border rounded overflow-y-scroll"
           defaultValue={prompt}
         />
+          <p className="text-gray-500 mt-4">{staticPromptPart}</p>
+
         <button
           style={{ position: "sticky", bottom: 0, left: 0 }}
           className="bg-blue-500 text-white py-2 px-4 rounded"
@@ -230,7 +238,7 @@ const Messages: React.FC = () => {
 
       {/* Drawer for JSON Input */}
       <div
-        className={`fixed top-16 left-0 h-4/5 transform transition-transform duration-300 ease-in-out bg-white overflow-y-auto shadow-2xl w-96 ${
+        className={`fixed top-16 left-0 h-4/5 p-2 transform transition-transform duration-300 ease-in-out bg-white overflow-y-auto shadow-2xl w-96 ${
           jsonDrawerOpen ? "translate-x-0" : "-translate-x-full"
         }`}
       >
