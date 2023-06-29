@@ -19,7 +19,12 @@ import {
   RESPONSE_EXAMPLES,
 } from "@/app/constants/sample-responses";
 import { CallbackManager } from "langchain/callbacks";
-
+interface TransformationCriteria {
+    toneValue?: string;
+    negativeTone?: string;
+    emojiQuantity?: string;
+    talkativeRange?: number;
+  }
 const promptResponseSchema = z.array(
   z.object({
     id: z.string().describe("Statement ID"),
@@ -40,8 +45,9 @@ const formatInstructions = fixParser.getFormatInstructions();
 
 export async function POST(req: Request) {
   const requestBody = await req.json();
-  const researchQuestions = JSON.parse(requestBody.researchQuestions);
-    const prompt = requestBody.prompt;
+  const researchQuestions = requestBody.researchQuestions;
+  const transformationCriteria = requestBody.toneInstructions;
+  const prompt = requestBody.prompt;
 
   const examplePrompt = new PromptTemplate({
     inputVariables: ["statements", "emojiQuantity", "talkativeRange", "output"],
@@ -56,7 +62,7 @@ export async function POST(req: Request) {
   );
 
   const examples = await exampleSelector.selectExamples({
-    emojiQuantity: researchQuestions.data.transformationCriteria.emojiQuantity,
+    emojiQuantity: transformationCriteria.emojiQuantity,
   });
   const dynamicPrompt = new FewShotPromptTemplate({
     examples,
@@ -105,20 +111,20 @@ export async function POST(req: Request) {
     });
 
     // to reduce tokens, we will use the index as the id
-    const orignalIds = researchQuestions.data.statements.map(
+    const orignalIds = researchQuestions.map(
       (statement: any) => statement.id
     );
-    researchQuestions.data.statements.forEach(
+    researchQuestions.forEach(
       (statement: any, index: number) => {
         statement.id = index.toString();
       }
     );
 
     const { toneValue, negativeTone, emojiQuantity, talkativeRange } =
-      researchQuestions.data.transformationCriteria;
+      transformationCriteria;
 
     const prompt = await dynamicPrompt.format({
-      statements: JSON.stringify(researchQuestions.data.statements),
+      statements: JSON.stringify(researchQuestions),
       toneValue: toneValue,
       negativeTone: negativeTone,
       emojiQuantity: emojiQuantity,
