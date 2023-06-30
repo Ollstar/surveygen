@@ -1,9 +1,7 @@
 "use client";
 import React, { useState, useRef, useEffect, useCallback } from "react";
 // import { fetchEventSource } from "@microsoft/fetch-event-source";
-import {
-  defaultPromptPrefix,
-} from "./constants/sample-responses";
+import { defaultPromptPrefix } from "./constants/sample-responses";
 import StatementEditor from "./components/StatementEditor";
 import Dialog from "@mui/material/Dialog";
 import DialogTitle from "@mui/material/DialogTitle";
@@ -123,9 +121,8 @@ const Messages: React.FC = () => {
         stopTimer();
 
         const end = performance.now();
-        const totalTime = (end - start) / 1000; 
+        const totalTime = (end - start) / 1000;
         setTimePerStatement(totalTime / statements.length);
-
         setUpdatedStatements(updated);
       } catch (error) {
         console.error(error);
@@ -198,19 +195,20 @@ const Messages: React.FC = () => {
       </div>
 
       <div id="mainContent" className="pt-14">
-      <div className="flex flex-col items-end">
-    <div className="flex items-center mb-2 mr-8">
-        <p>Api time (seconds):</p>
-        <p className="text-lg w-20">
-            {(currentTime / 1000).toFixed(2)}
-        </p>
-    </div>
-    <div className="flex items-center mb-2 mr-8">
-        <p>Time per statement (seconds):</p>
-        <p className="text-lg w-20">{(timePerStatement / 1000).toFixed(2)}</p>
-    </div>
-</div>
-
+        <div className="flex flex-col items-end">
+          <div className="flex items-center mb-2 mr-8">
+            <p>Api time (seconds):</p>
+            <p className="text-lg w-20">{(currentTime / 1000).toFixed(2)}</p>
+          </div>
+          <div className="flex items-center mb-2 mr-8">
+            <p>Time per statement (seconds):</p>
+            <p className="text-lg w-20">
+              {isNaN(currentTime / statements.length / 1000)
+                ? "0.00"
+                : (currentTime / statements.length / 1000).toFixed(2)}
+            </p>
+          </div>
+        </div>
 
         <StatementEditor
           inflight={inflight}
