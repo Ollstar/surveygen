@@ -45,7 +45,7 @@ const StatementEditor: React.FC<StatementEditorProps> = ({
   const addStatement = () => {
     const newStatement: Statement = {
       id: Date.now().toString(),
-      type: "",
+      type: "TextMessageCard",
       statement: "",
       choices: [],
     };
