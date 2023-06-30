@@ -123,7 +123,7 @@ const Messages: React.FC = () => {
         stopTimer();
 
         const end = performance.now();
-        const totalTime = end - start / 1000; // Calculate the total time
+        const totalTime = (end - start) / 1000; // Calculate the total time
 
         // Calculate time per statement and set it
         setTimePerStatement(totalTime / statements.length);
