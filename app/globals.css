@@ -136,3 +136,7 @@ body {
   font-size: 2rem; /* Modify this value as per your requirement */
 }
 
+@keyframes bounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-20px); }
+}

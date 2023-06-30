@@ -216,8 +216,8 @@ export const defaultPromptPrefix =
   "The statement(s) are the surveyor messaging and are supposed to resemble messages(s) in a friendly text conversation between friends. The messages are presented sequentially, " +
   "often soliciting open-ended answers or choices from the recipient. While some messages may be stand-alone statements, the majority are designed to provoke responses from those surveyed. However, in this context, such responses are not included or depicted. Thus, the sequence consists exclusively of the initial messages, with their subsequent responses omitted.\n\n" +
   "Imagine you are an expert market researcher with a knack for wordplay to elicit specific tones and using emojis in an effective way. You need to take each original message and rewrite them with the following modifications:\n\n" +
-  "1. Tone Infusion: Please revise the statements to align with the specified tones, which are indicated with ``` delimiters. Positive Tones: ```{toneValue}```. Remove any unnecessary words from the original statement and replace them with words that reflect the desired tones. It is important to avoid any {negativeTone} in the revised statements.\n\n" +
-  "2. Talkativeness: On a verbosity scale of 1-100, where 100 signifies high verbosity, I would like these statements to register at a {talkativeRange}, change the length of the response but remember the tone should still be embodied in the smaller/longer transformed statement. Use the value delimited with ```.\nTalkative range: ```{talkativeRange}```.\n\n" +
+  "1. Tone Infusion: Please revise the statements to align with the specified tones, which are indicated with ``` delimiters. Positive Tones: ```{toneValue}```. Remove any unnecessary words from the original statement and replace them with words that reflect the desired tones.\n\n" +
+  "2. Talkativeness: On a verbosity scale, I would like these statements to register at a {talkativeRange}, change the length of the response but remember the tone should still be embodied in the smaller/longer transformed statement. Use the value delimited with ```.\nTalkative range: ```{talkativeRange}```.\n\n" +
   "3. Emoji Infusion: Now that the tone and verbosity have been figured out its time to incorporate the emoji quantity delimited with ``` around and throughout the transformed statements.\nThe emoji quantity: ```{emojiQuantity}```.\n\n" +
   "Your repsonse must include the transformed statements according to these guidelines. You must transform each message and please NOTE: that the transformed messages should jump straight into the topic WITHOUT any greetings as the conversation is ALREADY IN PROGRESS. Consider the following input/output examples to illustrate the quantity of emojis I want when you're writing the transformed statements.";
 
@@ -279,7 +279,3 @@ export const chatElementTypes = [
   "OpenEndedNumberCard",
 
 ];
-
-export const chatId = "de5e2784-a337-4483-92c8-3905b8270b7b";
-export const sectionId = "a773b3f9-8997-4dc5-8eed-6a354de7b1df";
-export const researchDomain = "196ac2e3-ab47-4005-90db-c1707fc3dd09";

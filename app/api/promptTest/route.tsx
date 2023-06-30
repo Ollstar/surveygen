@@ -52,7 +52,7 @@ export async function POST(req: Request) {
   const examplePrompt = new PromptTemplate({
     inputVariables: ["statements", "emojiQuantity", "talkativeRange", "output"],
     template:
-      "Original Statement:{statements}\nEmoji quantity:{emojiQuantity}\nTalkative range:{talkativeRange}\n\nTransformed statement: {output}",
+      "Original Statement:{statements}\nEmoji quantity:{emojiQuantity}\nTalkative range:{talkativeRange}\nTransformed statement: {output}",
   });
   const exampleSelector = await SemanticSimilarityExampleSelector.fromExamples(
     RESPONSE_EXAMPLES,

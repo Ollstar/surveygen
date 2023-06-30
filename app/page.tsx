@@ -2,11 +2,7 @@
 import React, { useState, useRef, useEffect, useCallback } from "react";
 // import { fetchEventSource } from "@microsoft/fetch-event-source";
 import {
-  sampleJson,
   defaultPromptPrefix,
-  chatId,
-  sectionId,
-  researchDomain,
 } from "./constants/sample-responses";
 import StatementEditor from "./components/StatementEditor";
 import Dialog from "@mui/material/Dialog";
@@ -34,7 +30,7 @@ interface TransformationCriteria {
   toneValue?: string;
   negativeTone?: string;
   emojiQuantity?: string;
-  talkativeRange?: number;
+  talkativeRange?: string;
 }
 
 const Messages: React.FC = () => {
@@ -45,15 +41,15 @@ const Messages: React.FC = () => {
   const [statements, setStatements] = useState<Statement[]>([]);
   const [updatedStatements, setUpdatedStatements] = useState<Statement[]>([]);
   const [timePerStatement, setTimePerStatement] = useState<number>(0);
-
-  const [inputJson, setInputJson] = useState(sampleJson);
   const [prompt, setPrompt] = useState<string>(defaultPromptPrefix);
   const [toneValue, setToneValue] = useState("Authoritative, cheerful, caring");
   const [negativeTone, setNegativeTone] = useState("sarcastic, irreverent");
   const [emojiQuantity, setEmojiQuantity] = useState(
     "VERY HIGH: 3-5 emojis every 1-2 words"
   );
-  const [talkativeRange, setTalkativeRange] = useState(50);
+  const [talkativeRange, setTalkativeRange] = useState(
+    "SAME WORDY: Same amount of content as original"
+  );
 
   const [currentTime, setCurrentTime] = useState<number>(0);
   const timerInterval = useRef<NodeJS.Timeout | null>(null);
@@ -127,11 +123,10 @@ const Messages: React.FC = () => {
         stopTimer();
 
         const end = performance.now();
-        const totalTime = end - start; // Calculate the total time
-        console.log("Request took", totalTime, "milliseconds.");
+        const totalTime = end - start / 1000; // Calculate the total time
 
         // Calculate time per statement and set it
-        setTimePerStatement(totalTime / statements.length / 1000);
+        setTimePerStatement(totalTime / statements.length);
 
         setUpdatedStatements(updated);
       } catch (error) {
@@ -205,16 +200,19 @@ const Messages: React.FC = () => {
       </div>
 
       <div id="mainContent" className="pt-14">
-        <div className="flex justify-end items-center mb-4">
-          <div className="flex flex-col items-end">
-            <p className="text-lg">
-              Api time: {new Date(currentTime).toISOString().substr(14, 9)}
-            </p>
-            <p className="text-lg">
-              Time per statement: {timePerStatement.toFixed(2)} seconds
-            </p>
-          </div>
-        </div>
+      <div className="flex flex-col items-end">
+    <div className="flex items-center mb-2 mr-8">
+        <p>Api time (seconds):</p>
+        <p className="text-lg w-20">
+            {(currentTime / 1000).toFixed(2)}
+        </p>
+    </div>
+    <div className="flex items-center mb-2 mr-8">
+        <p>Time per statement (seconds):</p>
+        <p className="text-lg w-20">{(timePerStatement / 1000).toFixed(2)}</p>
+    </div>
+</div>
+
 
         <StatementEditor
           inflight={inflight}
@@ -238,7 +236,8 @@ const Messages: React.FC = () => {
             title={
               <p className="text-sm">
                 Use the input variables in your prompt by enclosing them in{" "}
-                {`{ }`} for example: {`{toneValue}`}. {`\n\nThere are 4 inputs: statements, toneValue, emojiQuantity, and talkativeRange.`}
+                {`{ }`} for example: {`{toneValue}`}.{" "}
+                {`\n\nThere are 4 inputs: statements, toneValue, emojiQuantity, and talkativeRange.`}
               </p>
             }
             arrow
@@ -329,23 +328,44 @@ const Messages: React.FC = () => {
               </option>
             </select>
           </div>
-          <label
-            className="block text-gray-700 text-md font-bold mb-2"
-            htmlFor="toneValue"
-          >
-            Talkative score (0-100)
-          </label>
-          <Slider
-            id="talkativeRange"
-            defaultValue={talkativeRange}
-            onChange={(e, newValue) => setTalkativeRange(newValue as number)}
-            aria-labelledby="range-slider"
-            valueLabelDisplay="auto"
-            step={25}
-            marks
-            min={0}
-            max={100}
-          />
+          <div className="mb-4">
+            <label
+              className="block text-gray-700 text-md font-bold mb-2"
+              htmlFor="talkativeScore"
+            >
+              Talkative score
+            </label>
+            <select
+              className="shadow border-none rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+              id="talkativeScore"
+              value={talkativeRange}
+              onChange={(e) => setTalkativeRange(e.target.value)}
+            >
+              <option value="">Select an option...</option>
+              <option value="ZERO: No additional words">
+                ULTRA LESS WORDY: Remove any extra content not a part of
+                original
+              </option>
+              <option value="LOW: A few additional words">
+                MUCH LESS WORDY: Much less content than original
+              </option>
+              <option value="LIGHTLY WORDY: Some additional words and phrases">
+                LESS WORDY: Less content than original
+              </option>
+              <option value="SAME WORDY: Same amount of content as original">
+                SAME WORDY: Same amount of content as original
+              </option>
+              <option value="WORDY: More additional content than original">
+                WORDY: More additional content than original
+              </option>
+              <option value="VERY WORDY: Significantly more additional content">
+                VERY WORDY: Significantly more additional content
+              </option>
+              <option value="ULTRA WORDY: Maximum additional content">
+                ULTRA WORDY: Maximum additional content
+              </option>
+            </select>
+          </div>
         </DialogContent>
         <DialogActions>
           <button
