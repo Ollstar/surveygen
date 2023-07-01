@@ -54,7 +54,19 @@ const Messages: React.FC = () => {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [jsonDrawerOpen, setJsonDrawerOpen] = useState(false);
   const staticPromptPart = `{examples}\n{format_instructions}\n Therefore here are the final Transformed Statements:`;
+  // Initialize useState hooks for each word
+  const [isWord1Present, setWord1Present] = useState(false);
+  const [isWord2Present, setWord2Present] = useState(false);
+  const [isWord3Present, setWord3Present] = useState(false);
+  const [isWord4Present, setWord4Present] = useState(false);
 
+  // Update useState hooks whenever the prompt changes
+  useEffect(() => {
+    setWord1Present(prompt.includes("{statements}"));
+    setWord2Present(prompt.includes("{emojiQuantity}"));
+    setWord3Present(prompt.includes("{talkativeRange}"));
+    setWord4Present(prompt.includes("{toneValue}"));
+  }, [prompt]);
   useEffect(() => {
     setToneInstructions({
       toneValue: toneValue,
@@ -222,52 +234,81 @@ const Messages: React.FC = () => {
       {/* Drawer for Prompt */}
       <div
         id="promptDrawer"
-        className={`fixed top-16 rounded right-0 h-full p-2 transform transition-transform duration-300 ease-in-out bg-gray-100 overflow-y-auto shadow-2xl w-1/2 ${
+        style={{ height: "calc(100vh - 2rem)" }} // 4rem is equivalent to top-16
+        className={`fixed top-16 rounded right-0 p-4 flex flex-col transform transition-transform duration-300 ease-in-out bg-gray-100 overflow-y-auto shadow-2xl w-4/5 md:w-1/2 ${
           drawerOpen ? "translate-x-0" : "translate-x-full"
         }`}
       >
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-xl font-semibold">Prompt:</h2>
-          <Tooltip
-            title={
-              <p className="text-sm">
-                Use the input variables in your prompt by enclosing them in{" "}
-                {`{ }`} for example: {`{toneValue}`}.{" "}
-                {`\n\nThere are 4 inputs: statements, toneValue, emojiQuantity, and talkativeRange.`}
-              </p>
-            }
-            arrow
-            placement="left"
-          >
-            <InformationCircleIcon className="h-10 w-10 text-gray-500" />
-          </Tooltip>
+        <div className="flex justify-between items-start mb-4">
+          <h2 className="text-2xl font-semibold">Prompt:</h2>
+          <div>
+            <div className="flex justify-between align-middle">
+              <p className=" font-semibold mb-2">Inputs:</p>
+              <Tooltip
+                title={
+                  <div className="text-sm">
+                    <p>
+                      Use the input variables in your prompt by enclosing them
+                      in <b>{`{ }`}</b>
+                    </p>
+                    <p>
+                      For example: <b>{`{toneValue}`}</b>.
+                    </p>
+                    <p className="mt-2">
+                      There are 4 inputs:
+                      <ul className="list-disc ml-5">
+                        <li>{`statements`}</li>
+                        <li>{`toneValue`}</li>
+                        <li>{`emojiQuantity`}</li>
+                        <li>{`talkativeRange`}</li>
+                      </ul>
+                    </p>
+                  </div>
+                }
+                arrow
+                placement="left"
+              >
+                <InformationCircleIcon className="h-6 w-6 text-gray-500" />
+              </Tooltip>
+            </div>
+
+            <div className="grid grid-cols-2 gap-2">
+              <p
+                className={isWord1Present ? "text-blue-600" : "text-gray-500"}
+              >{`{statements}`}</p>
+              <p
+                className={isWord2Present ? "text-blue-600" : "text-gray-500"}
+              >{`{emojiQuantity}`}</p>
+              <p
+                className={isWord3Present ? "text-blue-600" : "text-gray-500"}
+              >{`{talkativeRange}`}</p>
+              <p
+                className={isWord4Present ? "text-blue-600" : "text-gray-500"}
+              >{`{toneValue}`}</p>
+            </div>
+          </div>
         </div>
-        <p> Prefix: </p>
-
-        <textarea
-          id="prompt"
-          style={{
-            height: "calc(90% - 12rem)",
-            boxSizing: "border-box",
-            resize: "none",
-          }}
-          className="w-full p-4 border-none rounded overflow-y-scroll"
-          defaultValue={prompt}
-        />
-        <p> Suffix: </p>
-        <p className="text-gray-500 mb-4">{staticPromptPart}</p>
-
-        <button
-          className={`bg-blue-500 text-white py-2 px-4 rounded hover:bg-blue-700`}
-          onClick={() => {
-            setPrompt(
-              (document.getElementById("prompt") as HTMLTextAreaElement).value
-            );
-            setDrawerOpen(false);
-          }}
-        >
-          SUBMIT
-        </button>
+        <div className="flex-grow flex flex-col mb-4 overflow-y-auto">
+          <p className="font-semibold">Prefix:</p>
+          <textarea
+            id="prompt"
+            className="w-full p-2 mt-2 border-none rounded flex-grow resize-none"
+            defaultValue={prompt}
+            onChange={(e) => setPrompt(e.target.value)}
+          />
+          <div>
+            <p className="mt-2 font-semibold">Suffix:</p>
+            <p className="text-gray-500 mt-2">{staticPromptPart}</p>
+            <button
+              className="bg-blue-500 text-white py-2 px-4 mt-2 rounded hover:bg-blue-700 mb-2"
+              onClick={() => {
+                setDrawerOpen(false);
+              }}
+            >
+              CLOSE
+            </button>
+          </div>
+        </div>
       </div>
 
       <Dialog
